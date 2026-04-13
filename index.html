@@ -305,11 +305,7 @@
 
   <div class="main">
 
-    <!-- Clé API -->
-    <div class="api-bar">
-      <label>🔑 Clé API Claude :</label>
-      <input type="password" id="apiKey" placeholder="sk-ant-api03-..." />
-    </div>
+
 
     <!-- Zone de saisie — disparaît après analyse -->
     <div class="input-card" id="inputCard">
@@ -379,41 +375,13 @@
     document.getElementById('panel-contenu').innerHTML = '<div class="panel-loading">Analyse en cours...</div>';
     document.getElementById('sidePanel').classList.add('open');
 
-    const apiKey = document.getElementById('apiKey').value.trim();
-    if (!apiKey) {
-      document.getElementById('panel-contenu').innerHTML = '<div class="panel-loading">⚠️ Entre ta clé API ci-dessus.</div>';
-      return;
-    }
-
     const texteComplet = document.getElementById('output').innerText;
 
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/translate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-          model: 'claude-opus-4-5',
-          max_tokens: 500,
-          messages: [{
-            role: 'user',
-            content: `Tu es un expert en langue hébraïque. L'utilisateur apprend l'hébreu. Il lit ce texte : "${texteComplet}"
-
-Il a cliqué sur le mot : "${mot}"
-
-Réponds UNIQUEMENT avec ce format JSON, sans aucun texte autour :
-{
-  "traduction": "traduction du mot dans ce contexte",
-  "badges": ["nature du mot", "temps ou genre si pertinent"],
-  "racine": "les 3 lettres de la racine hébraïque et leur sens",
-  "analyse": "2-3 lignes : explication linguistique, forme dans le texte vs forme de base, autres sens courants"
-}`
-          }]
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mot, texte: texteComplet, type: 'mot' })
       });
 
       const data = await response.json();
@@ -457,34 +425,11 @@ async function basculerTraduction() {
       translationText.innerHTML = '<em style="color:#aaa">Traduction en cours...</em>';
 
       const texteHebreu = output.innerText;
-      const apiKey = document.getElementById('apiKey').value.trim();
-
-      if (!apiKey) {
-        translationText.innerHTML = '<em style="color:#aaa">⚠️ Entre ta clé API ci-dessus.</em>';
-        return;
-      }
-
       try {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
+        const response = await fetch('/api/translate', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true'
-          },
-          body: JSON.stringify({
-            model: 'claude-opus-4-5',
-            max_tokens: 1000,
-            messages: [{
-              role: 'user',
-              content: `Tu es un expert traducteur d'hébreu. Traduis ce texte hébreu en français. 
-La traduction doit être fidèle et précise, mais écrite en bon français naturel et fluide. 
-Ne donne que la traduction, sans commentaire ni explication.
-
-Texte hébreu : "${texteHebreu}"`
-            }]
-          })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ texte: texteHebreu, type: 'traduction_complete' })
         });
 
         const data = await response.json();
