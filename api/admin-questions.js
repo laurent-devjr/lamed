@@ -1,5 +1,8 @@
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
+console.log('SUPABASE_URL:', SUPABASE_URL ? 'OK' : 'MANQUANT');
+console.log('SUPABASE_KEY:', SUPABASE_KEY ? 'OK' : 'MANQUANT');
+console.log('ANTHROPIC_KEY:', process.env.ANTHROPIC_API_KEY ? 'OK' : 'MANQUANT');
 
 async function supabase(method, path, body) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
