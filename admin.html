@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lamed — Admin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f5f5f3; min-height: 100vh; }
+
+    .topbar {
+      background: white;
+      border-bottom: 1px solid #e8e8e8;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo { font-size: 16px; font-weight: 600; color: #2c2c2a; display: flex; align-items: center; gap: 8px; }
+    .logo-he { font-size: 18px; color: #888; }
+
+    .container { max-width: 900px; margin: 0 auto; padding: 32px 20px; }
+
+    .toolbar {
+      background: white;
+      border: 1px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .toolbar h2 { font-size: 15px; font-weight: 600; color: #2c2c2a; margin-right: 8px; }
+    select {
+      padding: 8px 12px;
+      border: 1px solid #e8e8e8;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #2c2c2a;
+      background: white;
+    }
+    .btn {
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 500;
+      border: none;
+    }
+    .btn-dark { background: #2c2c2a; color: white; }
+    .btn-dark:hover { background: #444; }
+    .btn-dark:disabled { background: #aaa; cursor: not-allowed; }
+    .btn-outline { background: white; color: #2c2c2a; border: 1px solid #e8e8e8; }
+    .btn-outline:hover { background: #f5f5f3; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: white;
+      border: 1px solid #e8e8e8;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+    .stat-val { font-size: 28px; font-weight: 600; color: #2c2c2a; }
+    .stat-label { font-size: 12px; color: #aaa; margin-top: 4px; }
+
+    .question-card {
+      background: white;
+      border: 1px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+    .q-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .badge {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 5px;
+      background: #eef4fb;
+      color: #185fa5;
+    }
+    .badge-warning {
+      background: #faeeda;
+      color: #ba7517;
+    }
+    .badge-success {
+      background: #eaf3de;
+      color: #3b6d11;
+    }
+    .badge-error {
+      background: #fcebeb;
+      color: #a32d2d;
+    }
+    .q-text { font-size: 16px; color: #2c2c2a; margin-bottom: 10px; }
+    .q-he {
+      font-size: 24px;
+      direction: rtl;
+      text-align: right;
+      background: #f9f9f7;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 14px;
+    }
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .option-item {
+      padding: 10px 14px;
+      border: 1px solid #e8e8e8;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #2c2c2a;
+    }
+    .option-item.correct {
+      background: #eaf3de;
+      border-color: #639922;
+      color: #3b6d11;
+      font-weight: 500;
+    }
+    .feedback-box {
+      background: #f9f9f7;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+
+    .rapport {
+      border: 1px solid #e8e8e8;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      font-size: 13px;
+    }
+    .rapport.ok { border-color: #639922; background: #eaf3de; }
+    .rapport.warn { border-color: #ba7517; background: #faeeda; }
+    .rapport-title { font-weight: 600; margin-bottom: 8px; }
+    .rapport ul { padding-left: 18px; }
+    .rapport li { margin-bottom: 4px; color: #555; }
+    .rapport .suggestion {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(0,0,0,0.08);
+      color: #2c2c2a;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+    .btn-valider { background: #3b6d11; color: white; }
+    .btn-valider:hover { background: #2a5009; }
+    .comment-area {
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      gap: 8px;
+    }
+    .comment-area textarea {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #e8e8e8;
+      border-radius: 6px;
+      font-size: 13px;
+      resize: none;
+      height: 36px;
+      font-family: Arial, sans-serif;
+    }
+    .btn-commenter { background: #ba7517; color: white; }
+    .btn-commenter:hover { background: #9a6010; }
+
+    .loading-bar {
+      background: #f0f0ee;
+      border-radius: 99px;
+      height: 4px;
+      margin: 12px 0;
+      overflow: hidden;
+      display: none;
+    }
+    .loading-bar.visible { display: block; }
+    .loading-bar-inner {
+      height: 4px;
+      background: #2c2c2a;
+      border-radius: 99px;
+      animation: loading 1.5s ease-in-out infinite;
+      width: 40%;
+    }
+    @keyframes loading {
+      0% { margin-left: -40%; }
+      100% { margin-left: 100%; }
+    }
+
+    .empty { text-align: center; padding: 60px 20px; color: #aaa; font-size: 15px; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <span class="logo-he">לָמַד</span>
+    <span>Lamed — Administration</span>
+  </div>
+  <a href="index.html" style="font-size:13px; color:#888; text-decoration:none;">← Retour à l'appli</a>
+</div>
+
+<div class="container">
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <h2>Générer des questions</h2>
+    <select id="selectSection">
+      <option value="vocab">Vocabulaire</option>
+      <option value="gram">Grammaire</option>
+      <option value="comp">Compréhension</option>
+    </select>
+    <select id="selectNombre">
+      <option value="3">3 questions</option>
+      <option value="5" selected>5 questions</option>
+      <option value="10">10 questions</option>
+    </select>
+    <button class="btn btn-dark" id="btnGenerer" onclick="generer()">Générer ✦</button>
+    <div class="loading-bar" id="loadingBar"><div class="loading-bar-inner"></div></div>
+    <button class="btn btn-outline" onclick="chargerQuestions()" style="margin-left:auto">↻ Actualiser</button>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-val" id="statTotal">0</div>
+      <div class="stat-label">Total</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="statCandidate" style="color:#ba7517">0</div>
+      <div class="stat-label">À valider</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="statValidee" style="color:#3b6d11">0</div>
+      <div class="stat-label">Validées</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="statCorrection" style="color:#a32d2d">0</div>
+      <div class="stat-label">À corriger</div>
+    </div>
+  </div>
+
+  <!-- LISTE DES QUESTIONS -->
+  <div id="questionsList"></div>
+
+</div>
+
+<script>
+  async function generer() {
+    const section = document.getElementById('selectSection').value;
+    const nombre = parseInt(document.getElementById('selectNombre').value);
+    const btn = document.getElementById('btnGenerer');
+    const loading = document.getElementById('loadingBar');
+
+    btn.disabled = true;
+    btn.textContent = 'Génération en cours...';
+    loading.classList.add('visible');
+
+    try {
+      const res = await fetch('/api/admin-questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'generer', section, nombre })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      await chargerQuestions();
+    } catch (err) {
+      alert('Erreur : ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Générer ✦';
+      loading.classList.remove('visible');
+    }
+  }
+
+  async function chargerQuestions() {
+    const res = await fetch('/api/admin-questions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'lister' })
+    });
+    const questions = await res.json();
+    afficherQuestions(questions);
+    majStats(questions);
+  }
+
+  async function chargerToutesQuestions() {
+    const res = await fetch('/api/admin-questions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'lister_toutes' })
+    });
+    return await res.json();
+  }
+
+  function majStats(questions) {
+    const toutes = questions;
+    document.getElementById('statTotal').textContent = toutes.length;
+    document.getElementById('statCandidate').textContent = toutes.filter(q => q.statut === 'candidate').length;
+    document.getElementById('statValidee').textContent = toutes.filter(q => q.statut === 'validée').length;
+    document.getElementById('statCorrection').textContent = toutes.filter(q => q.statut === 'à corriger').length;
+  }
+
+  function afficherQuestions(questions) {
+    const container = document.getElementById('questionsList');
+
+    if (!questions.length) {
+      container.innerHTML = '<div class="empty">Aucune question candidate — génère des questions ci-dessus !</div>';
+      return;
+    }
+
+    container.innerHTML = questions.map(q => {
+      const rapport = q.commentaires?.[0];
+      const rapportHtml = rapport ? `
+        <div class="rapport ${rapport.valide ? 'ok' : 'warn'}">
+          <div class="rapport-title">${rapport.valide ? '✅ Rapport pédagogique — OK' : '⚠️ Rapport pédagogique — Problèmes détectés'}</div>
+          ${rapport.problemes?.length ? `<ul>${rapport.problemes.map(p => `<li>${p}</li>`).join('')}</ul>` : '<p>Aucun problème détecté.</p>'}
+          ${rapport.suggestion ? `<div class="suggestion">💡 Suggestion : ${rapport.suggestion}</div>` : ''}
+        </div>` : '';
+
+      const commentairesUtilisateur = (q.commentaires || []).filter(c => c.type === 'utilisateur');
+      const historiqueHtml = commentairesUtilisateur.length ? `
+        <div style="margin-bottom:12px">
+          ${commentairesUtilisateur.map(c => `
+            <div style="font-size:12px; color:#888; padding:6px 10px; background:#f9f9f7; border-radius:6px; margin-bottom:4px">
+              💬 ${c.text}
+            </div>`).join('')}
+        </div>` : '';
+
+      return `
+        <div class="question-card" id="card-${q.id}">
+          <div class="q-header">
+            <span class="badge">${q.badge}</span>
+            <span class="badge ${q.statut === 'validée' ? 'badge-success' : q.statut === 'à corriger' ? 'badge-error' : 'badge-warning'}">
+              ${q.statut}
+            </span>
+          </div>
+          <div class="q-text">${q.text}</div>
+          ${q.he ? `<div class="q-he">${q.he}</div>` : ''}
+          <div class="options-grid">
+            ${q.options.map((opt, i) => `
+              <div class="option-item ${i === q.correct ? 'correct' : ''}">${i === q.correct ? '✓ ' : ''}${opt}</div>
+            `).join('')}
+          </div>
+          <div class="feedback-box">💡 ${q.feedback}</div>
+          ${rapportHtml}
+          ${historiqueHtml}
+          <div class="actions">
+            <button class="btn btn-valider" onclick="valider('${q.id}')">✅ Valider</button>
+            <div class="comment-area">
+              <textarea id="comment-${q.id}" placeholder="Décris ce qui ne va pas..."></textarea>
+              <button class="btn btn-commenter" onclick="commenter('${q.id}')">✍️ Corriger</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  async function valider(id) {
+    await fetch('/api/admin-questions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'valider', id })
+    });
+    document.getElementById('card-' + id).style.opacity = '0.4';
+    setTimeout(() => chargerQuestions(), 500);
+  }
+
+  async function commenter(id) {
+    const commentaire = document.getElementById('comment-' + id).value.trim();
+    if (!commentaire) return alert('Écris un commentaire d\'abord !');
+
+    await fetch('/api/admin-questions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'commenter', id, commentaire })
+    });
+    document.getElementById('comment-' + id).value = '';
+    chargerQuestions();
+  }
+
+  // Chargement initial
+  chargerQuestions();
+</script>
+
+</body>
+</html>
