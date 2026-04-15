@@ -21,7 +21,7 @@ export default async function handler(req, res) {
   // Récupérer les questions candidates
   if (action === 'lister') {
     const data = await supabase('GET',
-      `questions?statut=eq.candidate&order=created_at.desc`
+      `questions?order=created_at.desc`
     );
     return res.status(200).json(data);
   }
