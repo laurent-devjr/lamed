@@ -8,11 +8,17 @@ async function supabase(method, path, body) {
       'Content-Type': 'application/json',
       'apikey': SUPABASE_KEY,
       'Authorization': `Bearer ${SUPABASE_KEY}`,
-      'Prefer': method === 'POST' ? 'return=representation' : ''
+      'Prefer': 'return=representation'
     },
     body: body ? JSON.stringify(body) : undefined
   });
-  return res.json();
+  const text = await res.text();
+  console.log('Supabase response:', res.status, text);
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { error: text };
+  }
 }
 
 export default async function handler(req, res) {
