@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lamed — Test de niveau</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f5f5f3; min-height: 100vh; }
+
+    .topbar {
+      background: white;
+      border-bottom: 1px solid #e8e8e8;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo { font-size: 16px; font-weight: 600; color: #2c2c2a; display: flex; align-items: center; gap: 8px; }
+    .logo-he { font-size: 18px; color: #888; }
+    .back-btn {
+      font-size: 13px;
+      padding: 6px 14px;
+      background: white;
+      border: 1px solid #e8e8e8;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #2c2c2a;
+    }
+    .back-btn:hover { background: #f5f5f3; }
+
+    .container { max-width: 680px; margin: 0 auto; padding: 40px 20px; }
+
+    .welcome-card {
+      background: white;
+      border: 1px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+    }
+    .welcome-card h1 { font-size: 1.8em; color: #2c2c2a; margin-bottom: 12px; }
+    .welcome-card p { color: #888; line-height: 1.7; margin-bottom: 24px; }
+    .sections-preview {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .section-pill {
+      background: #f5f5f3;
+      border-radius: 8px;
+      padding: 12px 20px;
+      text-align: center;
+      flex: 1;
+      min-width: 140px;
+    }
+    .section-pill .icon { font-size: 24px; margin-bottom: 6px; }
+    .section-pill .title { font-size: 13px; font-weight: 600; color: #2c2c2a; }
+    .section-pill .duration { font-size: 11px; color: #aaa; margin-top: 2px; }
+    .btn-start {
+      background: #2c2c2a;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 14px 40px;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .btn-start:hover { background: #444; }
+    .btn-start:disabled { background: #aaa; cursor: not-allowed; }
+
+    .loading-wrap {
+      text-align: center;
+      padding: 40px 20px;
+      display: none;
+    }
+    .loading-wrap.visible { display: block; }
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e8e8e8;
+      border-top-color: #2c2c2a;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { color: #888; font-size: 15px; }
+
+    .progress-bar-wrap {
+      background: #f0f0ee;
+      border-radius: 99px;
+      height: 6px;
+      margin-bottom: 8px;
+    }
+    .progress-bar {
+      background: #2c2c2a;
+      height: 6px;
+      border-radius: 99px;
+      transition: width 0.3s ease;
+    }
+    .progress-label {
+      font-size: 12px;
+      color: #aaa;
+      margin-bottom: 28px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .question-card {
+      background: white;
+      border: 1px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 16px;
+    }
+    .section-badge {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 5px;
+      background: #eef4fb;
+      color: #185fa5;
+      display: inline-block;
+      margin-bottom: 16px;
+    }
+    .question-text {
+      font-size: 17px;
+      color: #2c2c2a;
+      margin-bottom: 8px;
+      line-height: 1.6;
+    }
+    .question-he {
+      font-size: 28px;
+      direction: rtl;
+      text-align: right;
+      color: #2c2c2a;
+      margin-bottom: 24px;
+      padding: 16px;
+      background: #f9f9f7;
+      border-radius: 8px;
+    }
+    .options { display: flex; flex-direction: column; gap: 10px; }
+    .option {
+      padding: 14px 18px;
+      border: 1px solid #e8e8e8;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      color: #2c2c2a;
+      background: white;
+      text-align: left;
+      transition: all 0.15s;
+    }
+    .option:hover { background: #f5f5f3; border-color: #bbb; }
+    .option.correct { background: #eaf3de; border-color: #639922; color: #3b6d11; }
+    .option.incorrect { background: #fcebeb; border-color: #e24b4a; color: #a32d2d; }
+    .option.disabled { pointer-events: none; }
+
+    .feedback {
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.6;
+      display: none;
+    }
+    .feedback.correct { background: #eaf3de; color: #3b6d11; display: block; }
+    .feedback.incorrect { background: #fcebeb; color: #a32d2d; display: block; }
+
+    .btn-next {
+      display: none;
+      width: 100%;
+      margin-top: 16px;
+      padding: 13px;
+      background: #2c2c2a;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .btn-next.visible { display: block; }
+    .btn-next:hover { background: #444; }
+
+    .result-card {
+      background: white;
+      border: 1px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+    }
+    .result-level { font-size: 72px; margin-bottom: 8px; }
+    .result-name { font-size: 24px; font-weight: 600; color: #2c2c2a; margin-bottom: 8px; }
+    .result-desc { color: #888; margin-bottom: 32px; line-height: 1.7; max-width: 480px; margin-left: auto; margin-right: auto; }
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .score-item { background: #f5f5f3; border-radius: 8px; padding: 16px 12px; }
+    .score-label { font-size: 11px; color: #aaa; margin-bottom: 6px; }
+    .score-val { font-size: 22px; font-weight: 600; color: #2c2c2a; }
+    .score-bar-wrap { background: #e8e8e8; border-radius: 99px; height: 4px; margin-top: 6px; }
+    .score-bar { background: #2c2c2a; height: 4px; border-radius: 99px; }
+    .btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .btn-secondary {
+      background: white;
+      color: #2c2c2a;
+      border: 1px solid #e8e8e8;
+      border-radius: 8px;
+      padding: 12px 28px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .btn-secondary:hover { background: #f5f5f3; }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <span class="logo-he">לָמַד</span>
+    <span>Lamed</span>
+  </div>
+  <button class="back-btn" onclick="window.location.href='index.html'">← Retour</button>
+</div>
+
+<div class="container">
+
+  <!-- ÉCRAN 1 : ACCUEIL -->
+  <div class="screen active" id="screen-welcome">
+    <div class="welcome-card">
+      <h1>Test de niveau</h1>
+      <p>Ce test de ~10 minutes évalue ton niveau en <strong>hébreu moderne</strong> sur 3 dimensions. Les questions sont générées à chaque fois — pas de mémorisation possible !</p>
+      <div class="sections-preview">
+        <div class="section-pill">
+          <div class="icon">📖</div>
+          <div class="title">Vocabulaire</div>
+          <div class="duration">~3 min · 10 questions</div>
+        </div>
+        <div class="section-pill">
+          <div class="icon">✍️</div>
+          <div class="title">Grammaire</div>
+          <div class="duration">~4 min · 10 questions</div>
+        </div>
+        <div class="section-pill">
+          <div class="icon">📝</div>
+          <div class="title">Compréhension</div>
+          <div class="duration">~3 min · 1 texte</div>
+        </div>
+      </div>
+      <button class="btn-start" id="btnCommencer" onclick="chargerEtDemarrer()">Commencer le test →</button>
+      <div class="loading-wrap" id="loadingWrap">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Claude prépare ton test personnalisé...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ÉCRAN 2 : QUESTIONS -->
+  <div class="screen" id="screen-test">
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+    </div>
+    <div class="progress-label">
+      <span id="progressSection">Section 1 — Vocabulaire</span>
+      <span id="progressCount">1 / 25</span>
+    </div>
+    <div class="question-card">
+      <div class="section-badge" id="qBadge">Vocabulaire</div>
+      <div class="question-text" id="qText"></div>
+      <div class="question-he" id="qHe"></div>
+      <div class="options" id="qOptions"></div>
+      <div class="feedback" id="qFeedback"></div>
+    </div>
+    <button class="btn-next" id="btnNext" onclick="questionSuivante()">Question suivante →</button>
+  </div>
+
+  <!-- ÉCRAN 3 : RÉSULTATS -->
+  <div class="screen" id="screen-results">
+    <div class="result-card">
+      <div class="result-level" id="resultLevel">ב</div>
+      <div class="result-name" id="resultName">Niveau Bet</div>
+      <div class="result-desc" id="resultDesc"></div>
+      <div class="score-grid">
+        <div class="score-item">
+          <div class="score-label">Vocabulaire</div>
+          <div class="score-val" id="scoreVocab">0/10</div>
+          <div class="score-bar-wrap"><div class="score-bar" id="barVocab" style="width:0%"></div></div>
+        </div>
+        <div class="score-item">
+          <div class="score-label">Grammaire</div>
+          <div class="score-val" id="scoreGram">0/10</div>
+          <div class="score-bar-wrap"><div class="score-bar" id="barGram" style="width:0%"></div></div>
+        </div>
+        <div class="score-item">
+          <div class="score-label">Compréhension</div>
+          <div class="score-val" id="scoreComp">0/5</div>
+          <div class="score-bar-wrap"><div class="score-bar" id="barComp" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="window.location.href='index.html'">← Retour à Lamed</button>
+        <button class="btn-start" onclick="chargerEtDemarrer()">Refaire le test</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let questions = [];
+  let questionIndex = 0;
+  let scores = { vocab: 0, gram: 0, comp: 0 };
+
+  async function chargerEtDemarrer() {
+    const btn = document.getElementById('btnCommencer');
+    const loading = document.getElementById('loadingWrap');
+
+    btn.style.display = 'none';
+    loading.classList.add('visible');
+
+    try {
+      const response = await fetch('/api/generate-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+
+      questions = data.questions;
+      questionIndex = 0;
+      scores = { vocab: 0, gram: 0, comp: 0 };
+
+      afficherScreen('screen-test');
+      afficherQuestion();
+
+    } catch (err) {
+      loading.classList.remove('visible');
+      btn.style.display = 'inline-block';
+      btn.textContent = '⚠️ Erreur — Réessayer';
+      console.error(err);
+    }
+  }
+
+  function afficherScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function afficherQuestion() {
+    const q = questions[questionIndex];
+    const total = questions.length;
+
+    document.getElementById('progressBar').style.width = (questionIndex / total * 100) + '%';
+    document.getElementById('progressCount').textContent = (questionIndex + 1) + ' / ' + total;
+
+    const sections = { vocab: 'Section 1 — Vocabulaire', gram: 'Section 2 — Grammaire', comp: 'Section 3 — Compréhension' };
+    document.getElementById('progressSection').textContent = sections[q.section];
+    document.getElementById('qBadge').textContent = q.badge;
+    document.getElementById('qText').textContent = q.text;
+
+    const qHe = document.getElementById('qHe');
+    if (q.he && q.he.trim() !== '') {
+      qHe.textContent = q.he;
+      qHe.style.display = 'block';
+    } else {
+      qHe.style.display = 'none';
+    }
+
+    const optionsEl = document.getElementById('qOptions');
+    optionsEl.innerHTML = q.options.map((opt, i) =>
+      `<button class="option" onclick="repondre(${i})">${opt}</button>`
+    ).join('');
+
+    document.getElementById('qFeedback').className = 'feedback';
+    document.getElementById('qFeedback').textContent = '';
+    document.getElementById('btnNext').classList.remove('visible');
+  }
+
+  function repondre(choix) {
+    const q = questions[questionIndex];
+    const options = document.querySelectorAll('.option');
+
+    options.forEach(o => o.classList.add('disabled'));
+    options[q.correct].classList.add('correct');
+
+    const feedback = document.getElementById('qFeedback');
+    if (choix === q.correct) {
+      scores[q.section]++;
+      options[choix].classList.add('correct');
+      feedback.className = 'feedback correct';
+      feedback.textContent = '✓ ' + q.feedback;
+    } else {
+      options[choix].classList.add('incorrect');
+      feedback.className = 'feedback incorrect';
+      feedback.textContent = '✗ ' + q.feedback;
+    }
+
+    document.getElementById('btnNext').classList.add('visible');
+    document.getElementById('btnNext').textContent =
+      questionIndex < questions.length - 1 ? 'Question suivante →' : 'Voir mes résultats →';
+  }
+
+  function questionSuivante() {
+    questionIndex++;
+    if (questionIndex < questions.length) {
+      afficherQuestion();
+    } else {
+      afficherResultats();
+    }
+  }
+
+  function afficherResultats() {
+    const pVocab = Math.round(scores.vocab / 10 * 100);
+    const pGram = Math.round(scores.gram / 10 * 100);
+    const pComp = Math.round(scores.comp / 5 * 100);
+    const global = Math.round((pVocab + pGram + pComp) / 3);
+
+    document.getElementById('scoreVocab').textContent = scores.vocab + '/10';
+    document.getElementById('scoreGram').textContent = scores.gram + '/10';
+    document.getElementById('scoreComp').textContent = scores.comp + '/5';
+    document.getElementById('barVocab').style.width = pVocab + '%';
+    document.getElementById('barGram').style.width = pGram + '%';
+    document.getElementById('barComp').style.width = pComp + '%';
+
+    let level, name, desc;
+    if (global < 30) {
+      level = 'א'; name = 'Niveau Aleph';
+      desc = 'Tu débutes en hébreu moderne. Tu connais quelques mots de base mais la grammaire et la lecture restent à construire. Commence par les textes courts et simples !';
+    } else if (global < 55) {
+      level = 'ב'; name = 'Niveau Bet';
+      desc = 'Tu as de bonnes bases en vocabulaire courant et tu commences à percevoir les structures grammaticales. Tu peux lire des textes simples avec de l\'aide.';
+    } else if (global < 75) {
+      level = 'ג'; name = 'Niveau Gimel';
+      desc = 'Tu maîtrises bien l\'hébreu moderne courant. Tu comprends les structures grammaticales principales et tu peux lire des textes de difficulté moyenne.';
+    } else {
+      level = 'ד'; name = 'Niveau Dalet';
+      desc = 'Excellent niveau ! Tu maîtrises l\'hébreu moderne avec aisance. Tu peux aborder des textes complexes, littéraires ou journalistiques.';
+    }
+
+    document.getElementById('resultLevel').textContent = level;
+    document.getElementById('resultName').textContent = name;
+    document.getElementById('resultDesc').textContent = desc;
+
+    afficherScreen('screen-results');
+  }
+</script>
+
+</body>
+</html>
