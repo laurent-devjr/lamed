@@ -49,8 +49,9 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
     });
 
     const data = await response.json();
-    const texte = data.content[0].text.trim();
-    const questions = JSON.parse(texte);
+    let texte = data.content[0].text.trim();
+texte = texte.replace(/```json/g, '').replace(/```/g, '').trim();
+const questions = JSON.parse(texte);
     res.status(200).json({ questions });
 
   } catch (err) {
