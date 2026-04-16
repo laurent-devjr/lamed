@@ -211,6 +211,26 @@
     }
 
     .empty { text-align: center; padding: 60px 20px; color: #aaa; font-size: 15px; }
+
+    .card-spinner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 20px;
+      gap: 16px;
+      color: #aaa;
+      font-size: 13px;
+    }
+    .card-spinner-ring {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #e8e8e8;
+      border-top-color: #2c2c2a;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -298,86 +318,84 @@
   }
 
   async function chargerQuestions() {
-    const res = await fetch('/api/admin-questions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'lister' })
-    });
-    const questions = await res.json();
-    afficherQuestions(questions);
-    majStats(questions);
+    const [resCandidat, resToutes] = await Promise.all([
+      fetch('/api/admin-questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'lister' })
+      }),
+      fetch('/api/admin-questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'lister_toutes' })
+      })
+    ]);
+    const candidates = await resCandidat.json();
+    const toutes = await resToutes.json();
+    afficherQuestions(candidates);
+    majStats(toutes);
   }
 
-  async function chargerToutesQuestions() {
-    const res = await fetch('/api/admin-questions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'lister_toutes' })
-    });
-    return await res.json();
-  }
-
-  function majStats(questions) {
-    const toutes = questions;
+  function majStats(toutes) {
     document.getElementById('statTotal').textContent = toutes.length;
     document.getElementById('statCandidate').textContent = toutes.filter(q => q.statut === 'candidate').length;
     document.getElementById('statValidee').textContent = toutes.filter(q => q.statut === 'validée').length;
     document.getElementById('statCorrection').textContent = toutes.filter(q => q.statut === 'à corriger').length;
   }
 
+  function renderQuestionCard(q) {
+    const rapport = q.commentaires?.[0];
+    const rapportHtml = rapport ? `
+      <div class="rapport ${rapport.valide ? 'ok' : 'warn'}">
+        <div class="rapport-title">${rapport.valide ? '✅ Rapport pédagogique — OK' : '⚠️ Rapport pédagogique — Problèmes détectés'}</div>
+        ${rapport.problemes?.length ? `<ul>${rapport.problemes.map(p => `<li>${p}</li>`).join('')}</ul>` : '<p>Aucun problème détecté.</p>'}
+        ${rapport.suggestion ? `<div class="suggestion">💡 Suggestion : ${rapport.suggestion}</div>` : ''}
+      </div>` : '';
+
+    const commentairesUtilisateur = (q.commentaires || []).filter(c => c.type === 'utilisateur');
+    const historiqueHtml = commentairesUtilisateur.length ? `
+      <div style="margin-bottom:12px">
+        ${commentairesUtilisateur.map(c => `
+          <div style="font-size:12px; color:#888; padding:6px 10px; background:#f9f9f7; border-radius:6px; margin-bottom:4px">
+            💬 ${c.text}
+          </div>`).join('')}
+      </div>` : '';
+
+    return `
+      <div class="question-card" id="card-${q.id}">
+        <div class="q-header">
+          <span class="badge">${q.badge}</span>
+          <span class="badge ${q.statut === 'validée' ? 'badge-success' : q.statut === 'à corriger' ? 'badge-error' : 'badge-warning'}">
+            ${q.statut}
+          </span>
+        </div>
+        <div class="q-text">${q.text}</div>
+        ${q.he ? `<div class="q-he">${q.he}</div>` : ''}
+        <div class="options-grid">
+          ${q.options.map((opt, i) => `
+            <div class="option-item ${i === q.correct ? 'correct' : ''}">${i === q.correct ? '✓ ' : ''}${opt}</div>
+          `).join('')}
+        </div>
+        <div class="feedback-box">💡 ${q.feedback}</div>
+        ${rapportHtml}
+        ${historiqueHtml}
+        <div class="actions">
+          <button class="btn btn-valider" onclick="valider('${q.id}')">✅ Valider</button>
+          <div class="comment-area">
+            <textarea id="comment-${q.id}" placeholder="Décris ce qui ne va pas..."></textarea>
+            <button class="btn btn-commenter" onclick="commenter('${q.id}')">✍️ Corriger</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
   function afficherQuestions(questions) {
     const container = document.getElementById('questionsList');
-
     if (!questions.length) {
       container.innerHTML = '<div class="empty">Aucune question candidate — génère des questions ci-dessus !</div>';
       return;
     }
-
-    container.innerHTML = questions.map(q => {
-      const rapport = q.commentaires?.[0];
-      const rapportHtml = rapport ? `
-        <div class="rapport ${rapport.valide ? 'ok' : 'warn'}">
-          <div class="rapport-title">${rapport.valide ? '✅ Rapport pédagogique — OK' : '⚠️ Rapport pédagogique — Problèmes détectés'}</div>
-          ${rapport.problemes?.length ? `<ul>${rapport.problemes.map(p => `<li>${p}</li>`).join('')}</ul>` : '<p>Aucun problème détecté.</p>'}
-          ${rapport.suggestion ? `<div class="suggestion">💡 Suggestion : ${rapport.suggestion}</div>` : ''}
-        </div>` : '';
-
-      const commentairesUtilisateur = (q.commentaires || []).filter(c => c.type === 'utilisateur');
-      const historiqueHtml = commentairesUtilisateur.length ? `
-        <div style="margin-bottom:12px">
-          ${commentairesUtilisateur.map(c => `
-            <div style="font-size:12px; color:#888; padding:6px 10px; background:#f9f9f7; border-radius:6px; margin-bottom:4px">
-              💬 ${c.text}
-            </div>`).join('')}
-        </div>` : '';
-
-      return `
-        <div class="question-card" id="card-${q.id}">
-          <div class="q-header">
-            <span class="badge">${q.badge}</span>
-            <span class="badge ${q.statut === 'validée' ? 'badge-success' : q.statut === 'à corriger' ? 'badge-error' : 'badge-warning'}">
-              ${q.statut}
-            </span>
-          </div>
-          <div class="q-text">${q.text}</div>
-          ${q.he ? `<div class="q-he">${q.he}</div>` : ''}
-          <div class="options-grid">
-            ${q.options.map((opt, i) => `
-              <div class="option-item ${i === q.correct ? 'correct' : ''}">${i === q.correct ? '✓ ' : ''}${opt}</div>
-            `).join('')}
-          </div>
-          <div class="feedback-box">💡 ${q.feedback}</div>
-          ${rapportHtml}
-          ${historiqueHtml}
-          <div class="actions">
-            <button class="btn btn-valider" onclick="valider('${q.id}')">✅ Valider</button>
-            <div class="comment-area">
-              <textarea id="comment-${q.id}" placeholder="Décris ce qui ne va pas..."></textarea>
-              <button class="btn btn-commenter" onclick="commenter('${q.id}')">✍️ Corriger</button>
-            </div>
-          </div>
-        </div>`;
-    }).join('');
+    container.innerHTML = questions.map(q => renderQuestionCard(q)).join('');
   }
 
   async function valider(id) {
@@ -394,13 +412,22 @@
     const commentaire = document.getElementById('comment-' + id).value.trim();
     if (!commentaire) return alert('Écris un commentaire d\'abord !');
 
-    await fetch('/api/admin-questions', {
+    const card = document.getElementById('card-' + id);
+    card.innerHTML = `
+      <div class="card-spinner">
+        <div class="card-spinner-ring"></div>
+        Correction en cours par Claude…
+      </div>`;
+
+    const res = await fetch('/api/admin-questions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'commenter', id, commentaire })
     });
-    document.getElementById('comment-' + id).value = '';
-    chargerQuestions();
+    const data = await res.json();
+    const updated = Array.isArray(data) ? data[0] : data;
+
+    card.outerHTML = renderQuestionCard(updated);
   }
 
   // Chargement initial

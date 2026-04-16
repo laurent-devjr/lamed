@@ -27,10 +27,18 @@ async function supabase(method, path, body) {
 export default async function handler(req, res) {
   const { action } = req.body || {};
 
-  // Récupérer les questions candidates
+  // Récupérer uniquement les questions candidates (pour la liste)
   if (action === 'lister') {
     const data = await supabase('GET',
       `questions?statut=eq.candidate&order=created_at.desc`
+    );
+    return res.status(200).json(data);
+  }
+
+  // Récupérer toutes les questions tous statuts (pour les stats)
+  if (action === 'lister_toutes') {
+    const data = await supabase('GET',
+      `questions?order=created_at.desc`
     );
     return res.status(200).json(data);
   }
