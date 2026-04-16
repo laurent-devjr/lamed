@@ -30,7 +30,7 @@ export default async function handler(req, res) {
   // Récupérer les questions candidates
   if (action === 'lister') {
     const data = await supabase('GET',
-      `questions?order=created_at.desc`
+      `questions?statut=eq.candidate&order=created_at.desc`
     );
     return res.status(200).json(data);
   }
@@ -45,18 +45,78 @@ export default async function handler(req, res) {
     return res.status(200).json(data);
   }
 
-  // Rejeter avec commentaire
+  // Commenter et corriger automatiquement via Claude
   if (action === 'commenter') {
     const { id, commentaire } = req.body;
 
     // Récupère la question existante
     const existing = await supabase('GET', `questions?id=eq.${id}`);
-    const commentaires = existing[0]?.commentaires || [];
-    commentaires.push({ text: commentaire, date: new Date() });
+    const question = existing[0];
+    const commentaires = question?.commentaires || [];
+    commentaires.push({ type: 'admin', text: commentaire, date: new Date() });
+
+    // Appel Claude pour corriger la question en tenant compte du commentaire
+    const correctionRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1500,
+        messages: [{
+          role: 'user',
+          content: `Tu es un professeur d'hébreu moderne israélien contemporain.
+
+Voici une question de test existante :
+${JSON.stringify({
+  text: question.text,
+  he: question.he,
+  options: question.options,
+  correct: question.correct,
+  feedback: question.feedback
+}, null, 2)}
+
+Un administrateur a laissé ce commentaire de correction :
+"${commentaire}"
+
+Corrige la question en tenant compte de ce commentaire. Retourne UNIQUEMENT ce JSON sans backticks :
+{
+  "text": "question corrigée en français",
+  "he": "hébreu corrigé (vide si pas nécessaire)",
+  "options": ["A", "B", "C", "D"],
+  "correct": 0,
+  "feedback": "explication pédagogique corrigée"
+}`
+        }]
+      })
+    });
+
+    const correctionData = await correctionRes.json();
+    const corrected = JSON.parse(
+      correctionData.content[0].text.replace(/```json|```/g, '').trim()
+    );
+
+    commentaires.push({
+      type: 'correction_claude',
+      text: 'Question corrigée automatiquement par Claude',
+      date: new Date()
+    });
 
     const data = await supabase('PATCH',
       `questions?id=eq.${id}`,
-      { statut: 'à corriger', commentaires, updated_at: new Date() }
+      {
+        text: corrected.text,
+        he: corrected.he,
+        options: corrected.options,
+        correct: corrected.correct,
+        feedback: corrected.feedback,
+        statut: 'candidate',
+        commentaires,
+        updated_at: new Date()
+      }
     );
     return res.status(200).json(data);
   }
