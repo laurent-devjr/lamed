@@ -253,6 +253,14 @@
       <option value="gram">Grammaire</option>
       <option value="comp">Compréhension</option>
     </select>
+    <select id="selectNiveau" title="Niveau">
+      <option value="1">N1 - Ultra-courant</option>
+      <option value="2" selected>N2 - Quotidien simple</option>
+      <option value="3">N3 - Phrases courtes</option>
+      <option value="4">N4 - Grammaire intermédiaire</option>
+      <option value="5">N5 - Vocabulaire soutenu</option>
+      <option value="6">N6 - Littéraire</option>
+    </select>
     <select id="selectNombre">
       <option value="3">3 questions</option>
       <option value="5" selected>5 questions</option>
@@ -291,6 +299,7 @@
 <script>
   async function generer() {
     const section = document.getElementById('selectSection').value;
+    const niveau = parseInt(document.getElementById('selectNiveau').value);
     const nombre = parseInt(document.getElementById('selectNombre').value);
     const btn = document.getElementById('btnGenerer');
     const loading = document.getElementById('loadingBar');
@@ -303,7 +312,7 @@
       const res = await fetch('/api/admin-questions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'generer', section, nombre })
+        body: JSON.stringify({ action: 'generer', section, nombre, niveau })
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);

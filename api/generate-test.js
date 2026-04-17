@@ -4,6 +4,16 @@ export default async function handler(req, res) {
   }
 
   try {
+    const { niveau = 3 } = req.body;
+    const niveauDescriptions = {
+      1: 'N1 = mots ultra-courants et expressions de base (שלום, מים, בית, תודה)',
+      2: 'N2 = vocabulaire quotidien simple, salutations et besoins essentiels',
+      3: 'N3 = phrases courtes, verbes courants au présent et passé simple',
+      4: 'N4 = grammaire intermédiaire, binyanim courants (פָּעַל, פִּעֵל, הִפְעִיל), temps multiples',
+      5: 'N5 = textes complexes, vocabulaire soutenu, constructions syntaxiques élaborées',
+      6: 'N6 = registre littéraire, formes rares, style soutenu et nuances stylistiques'
+    };
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -16,8 +26,11 @@ export default async function handler(req, res) {
         max_tokens: 4000,
         messages: [{
           role: 'user',
-          content: `Tu es un expert en didactique de l'hébreu moderne (israelien contemporain). 
+          content: `Tu es un expert en didactique de l'hébreu moderne (israelien contemporain).
 Génère un test de niveau en hébreu MODERNE PARLÉ — pas biblique.
+
+Niveau de difficulté : N${niveau} sur 6 — ${niveauDescriptions[niveau]}
+Chaque question générée doit être clairement de ce niveau de difficulté. Ni plus facile, ni plus difficile.
 
 Le test doit contenir exactement 25 questions en JSON, réparties ainsi :
 - 10 questions de vocabulaire (mots du quotidien : famille, corps, nourriture, transport, émotions, travail, chiffres, couleurs)
@@ -28,6 +41,7 @@ Pour chaque question, utilise ce format JSON exact :
 {
   "section": "vocab" | "gram" | "comp",
   "badge": "Vocabulaire" | "Grammaire" | "Compréhension",
+  "niveau": ${niveau},
   "text": "texte de la question en français",
   "he": "mot ou phrase en hébreu (ou vide si pas nécessaire)",
   "options": ["option A", "option B", "option C", "option D"],
@@ -51,9 +65,9 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
 
     const data = await response.json();
     let texte = data.content[0].text.trim();
-texte = texte.replace(/```json/g, '').replace(/```/g, '').trim();
-const questions = JSON.parse(texte);
-    res.status(200).json({ questions });
+    texte = texte.replace(/```json/g, '').replace(/```/g, '').trim();
+    const questions = JSON.parse(texte);
+    res.status(200).json({ questions, niveau });
 
   } catch (err) {
     res.status(500).json({ error: err.message });

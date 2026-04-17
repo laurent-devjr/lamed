@@ -131,13 +131,22 @@ Corrige la question en tenant compte de ce commentaire. Retourne UNIQUEMENT ce J
 
   // Générer + vérifier de nouvelles questions
   if (action === 'generer') {
-    const { section, nombre } = req.body;
+    const { section, nombre, niveau = 2 } = req.body;
 
     const sectionLabel = {
       vocab: 'vocabulaire (mots du quotidien en hébreu moderne)',
       gram: 'grammaire (hébreu moderne parlé)',
       comp: 'compréhension (textes courts de la vie réelle : SMS, panneaux, menus)'
     }[section];
+
+    const niveauDescriptions = {
+      1: 'N1 = mots ultra-courants et expressions de base (שלום, מים, בית, תודה)',
+      2: 'N2 = vocabulaire quotidien simple, salutations et besoins essentiels',
+      3: 'N3 = phrases courtes, verbes courants au présent et passé simple',
+      4: 'N4 = grammaire intermédiaire, binyanim courants (פָּעַל, פִּעֵל, הִפְעִיל), temps multiples',
+      5: 'N5 = textes complexes, vocabulaire soutenu, constructions syntaxiques élaborées',
+      6: 'N6 = registre littéraire, formes rares, style soutenu et nuances stylistiques'
+    };
 
     // Étape 1 : Génération
     const gen = await fetch('https://api.anthropic.com/v1/messages', {
@@ -155,6 +164,9 @@ Corrige la question en tenant compte de ce commentaire. Retourne UNIQUEMENT ce J
           content: `Tu es un professeur d'hébreu moderne israélien contemporain.
 Génère ${nombre} questions de ${sectionLabel} pour un test de niveau destiné à des francophones.
 
+Niveau de difficulté : N${niveau} sur 6 — ${niveauDescriptions[niveau]}
+Chaque question générée doit être clairement de ce niveau de difficulté. Ni plus facile, ni plus difficile.
+
 Règles strictes :
 - Uniquement hébreu MODERNE parlé — aucun verset biblique
 - Phrases hébraïques grammaticalement parfaites
@@ -167,6 +179,7 @@ Format JSON exact, sans backticks :
 [{
   "section": "${section}",
   "badge": "${section === 'vocab' ? 'Vocabulaire' : section === 'gram' ? 'Grammaire' : 'Compréhension'}",
+  "niveau": ${niveau},
   "text": "question en français",
   "he": "mot ou phrase en hébreu (vide si pas nécessaire)",
   "options": ["A", "B", "C", "D"],
@@ -235,6 +248,7 @@ Réponds UNIQUEMENT avec ce JSON sans backticks :
       await supabase('POST', 'questions', {
         section: q.section,
         badge: q.badge,
+        niveau: q.niveau || niveau,
         text: q.text,
         he: q.he || '',
         options: q.options,
