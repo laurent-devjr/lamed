@@ -42,6 +42,7 @@ Règles importantes :
 - Feedback toujours pédagogique et utile
 - Difficulté progressive dans chaque section (du plus simple au plus complexe)
 - Mélange de questions "hébreu → français" et "français → hébreu"
+- Pour les phrases à trou (avec __________) : l'hébreu se lit de droite à gauche, le blanc doit être placé à la position grammaticale exacte du mot manquant dans l'ordre RTL. Exemple incorrect : 'אתמול אני __________' (le blanc est à droite alors que le verbe manquant est en fin de phrase à gauche). Exemple correct : '__________ אתמול אני'. Ne jamais placer le blanc à droite par défaut — toujours respecter la position réelle du mot dans la phrase hébraïque.
 
 Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans backticks.`
         }]
