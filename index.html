@@ -97,6 +97,17 @@
       font-weight: 500;
     }
     .btn-primary:hover { background: #444; }
+    .btn-photo {
+      font-size: 13px;
+      padding: 8px 18px;
+      background: #f0f0ee;
+      color: #2c2c2a;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .btn-photo:hover { background: #e4e4e2; }
 
     /* TEXTE CLIQUABLE */
     .text-card {
@@ -313,7 +324,9 @@
       <div class="input-label">Colle ton texte hébreu</div>
       <textarea id="input" placeholder="הדבק כאן טקסט בעברית..."></textarea>
       <div class="btn-row">
-        <button class="btn-primary" onclick="afficherTexte()">Lire le texte ▶</button>
+        <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none" onchange="ocrPhoto(this)">
+        <button class="btn-photo" onclick="document.getElementById('photoInput').click()">📷 Photo</button>
+        <button class="btn-primary" onclick="afficherTexte()" style="margin-left:8px">Lire le texte ▶</button>
       </div>
     </div>
 
@@ -345,6 +358,41 @@
 
 <script>
   let motActif = null;
+
+  async function ocrPhoto(input) {
+    const file = input.files[0];
+    if (!file) return;
+    input.value = '';
+
+    const textarea = document.getElementById('input');
+    textarea.value = 'Lecture du texte en cours...';
+    textarea.disabled = true;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const dataUrl = e.target.result;
+      const mediaType = file.type;
+      const base64 = dataUrl.split(',')[1];
+
+      try {
+        const res = await fetch('/api/ocr', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: base64, mediaType })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        textarea.value = data.texte;
+      } catch (err) {
+        textarea.value = '';
+        alert('Erreur lors de la lecture : ' + err.message);
+      } finally {
+        textarea.disabled = false;
+        textarea.focus();
+      }
+    };
+    reader.readAsDataURL(file);
+  }
 
   function afficherTexte() {
     const texte = document.getElementById('input').value.trim();
