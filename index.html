@@ -324,7 +324,7 @@
       <div class="input-label">Colle ton texte hébreu</div>
       <textarea id="input" placeholder="הדבק כאן טקסט בעברית..."></textarea>
       <div class="btn-row">
-        <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none" onchange="ocrPhoto(this)">
+        <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="ocrPhoto(this)">
         <button class="btn-photo" onclick="document.getElementById('photoInput').click()">📷 Photo</button>
         <button class="btn-primary" onclick="afficherTexte()" style="margin-left:8px">Lire le texte ▶</button>
       </div>
@@ -382,7 +382,7 @@
         });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
-        textarea.value = data.texte;
+        textarea.value = data.texte.replace(/\\n/g, '\n');
       } catch (err) {
         textarea.value = '';
         alert('Erreur lors de la lecture : ' + err.message);
@@ -400,12 +400,16 @@
 
     // Nettoie les niqqoud
     const textePropre = texte.replace(/[\u0591-\u05C7]/g, '');
-    const mots = textePropre.split(/\s+/);
+    const lignes = textePropre.split(/\n/);
 
     const output = document.getElementById('output');
-    output.innerHTML = mots.map(mot =>
-      `<span class="word" onclick="traduire(this, '${mot.replace(/'/g, "\\'")}')">${mot}</span>`
-    ).join(' ');
+    output.innerHTML = lignes.map(ligne => {
+      const mots = ligne.trim().split(/\s+/).filter(m => m);
+      if (!mots.length) return '<br>';
+      return mots.map(mot =>
+        `<span class="word" onclick="traduire(this, '${mot.replace(/'/g, "\\'")}')">${mot}</span>`
+      ).join(' ');
+    }).join('<br>');
 
     // Remplace la zone de saisie par le texte cliquable
     document.getElementById('inputCard').style.display = 'none';

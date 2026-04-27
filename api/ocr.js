@@ -31,7 +31,7 @@ export default async function handler(req, res) {
           },
           {
             type: 'text',
-            text: "Ce document contient du texte en hébreu. Extrais uniquement le texte hébreu que tu vois, sans aucune traduction ni commentaire. Retourne uniquement le texte hébreu brut, tel quel."
+            text: "Ce document contient du texte en hébreu. Extrais uniquement le texte hébreu que tu vois, sans aucune traduction ni commentaire. Retourne uniquement le texte hébreu brut, tel quel. Conserve exactement les retours à la ligne du texte original. Chaque ligne du texte dans l'image doit correspondre à une ligne dans ta réponse."
           }
         ]
       }]
