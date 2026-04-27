@@ -247,6 +247,96 @@
       padding: 20px 0;
     }
 
+    .btn-conjugaison {
+      display: inline-block;
+      margin-top: 14px;
+      padding: 8px 14px;
+      background: #eef4fb;
+      color: #185fa5;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      border: 1px solid #c8ddf5;
+      width: 100%;
+      text-align: center;
+    }
+    .btn-conjugaison:hover { background: #d8eaf8; }
+
+    /* PANNEAU CONJUGAISONS */
+    .conj-panel {
+      position: fixed;
+      top: 60px;
+      right: 20px;
+      bottom: 20px;
+      width: 320px;
+      background: white;
+      border: 1px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 24px;
+      overflow-y: auto;
+      z-index: 200;
+      display: none;
+    }
+    .conj-panel.open { display: block; }
+    .conj-infinitif {
+      font-size: 28px;
+      direction: rtl;
+      text-align: right;
+      font-weight: 700;
+      color: #2c2c2a;
+      margin: 36px 0 18px;
+    }
+    .conj-section-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #185fa5;
+      margin: 18px 0 8px;
+    }
+    .conj-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    .conj-table th {
+      text-align: center;
+      color: #aaa;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 4px 6px;
+      border-bottom: 1px solid #f0f0ee;
+    }
+    .conj-table td {
+      padding: 6px 8px;
+      border-bottom: 1px solid #f9f9f7;
+      vertical-align: middle;
+    }
+    .conj-table td:first-child {
+      color: #aaa;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .conj-table td:last-child {
+      direction: rtl;
+      text-align: right;
+      font-size: 17px;
+      color: #2c2c2a;
+    }
+    .conj-table td.conj-m { color: #185fa5; }
+    .conj-table td.conj-f { color: #b5420a; }
+    @media (max-width: 700px) {
+      .conj-panel {
+        top: 0; left: 0; right: 0; bottom: 0;
+        width: 100%;
+        border-radius: 0;
+      }
+    }
+
     /* CLÉ API */
     .api-bar {
       background: #fffdf0;
@@ -356,6 +446,13 @@
 
 </div>
 
+<!-- Panneau conjugaisons (par-dessus) -->
+<div class="conj-panel" id="conjPanel">
+  <button class="panel-close" onclick="fermerPanelConj()">✕</button>
+  <div class="conj-infinitif" id="conj-infinitif"></div>
+  <div id="conj-contenu"><div class="panel-loading">Chargement des conjugaisons...</div></div>
+</div>
+
 <script>
   let motActif = null;
 
@@ -446,11 +543,16 @@
       document.getElementById('panel-badges').innerHTML = json.badges
         .map(b => `<span class="badge">${b}</span>`).join('');
 
+      const btnConj = json.estVerbe && json.infinitif
+        ? `<button class="btn-conjugaison" onclick="afficherConjugaisons('${json.infinitif.replace(/'/g, "\\'")}')">📊 Conjugaisons →</button>`
+        : '';
+
       document.getElementById('panel-contenu').innerHTML = `
         <div class="panel-label">Racine</div>
         <div class="panel-val">${json.racine}</div>
         <div class="panel-label">Analyse</div>
         <div class="panel-val">${json.analyse}</div>
+        ${btnConj}
       `;
 
     } catch (err) {
@@ -521,6 +623,61 @@ function nouveauTexte() {
     document.getElementById('sidePanel').classList.remove('open');
     if (motActif) motActif.classList.remove('active');
     motActif = null;
+  }
+
+  function fermerPanelConj() {
+    document.getElementById('conjPanel').classList.remove('open');
+  }
+
+  async function afficherConjugaisons(infinitif) {
+    const panel = document.getElementById('conjPanel');
+    document.getElementById('conj-infinitif').textContent = infinitif;
+    document.getElementById('conj-contenu').innerHTML = '<div class="panel-loading">Chargement des conjugaisons...</div>';
+    panel.classList.add('open');
+
+    try {
+      const response = await fetch('/api/conjugaison', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ verbe: infinitif })
+      });
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+
+      const pronoms = [
+        { key: 'ani',     label: 'אני',     m: 'ani_m',      f: 'ani_f' },
+        { key: 'ata_at',  label: 'אתה / את', m: 'ata',       f: 'at' },
+        { key: 'hou_hi',  label: 'הוא / היא', m: 'hou',      f: 'hi' },
+        { key: 'anah',    label: 'אנחנו',    m: 'anahnou_m',  f: 'anahnou_f' },
+        { key: 'atem',    label: 'אתם / אתן', m: 'atem',     f: 'aten' },
+        { key: 'hem',     label: 'הם / הן',  m: 'hem',        f: 'hen' },
+      ];
+
+      function buildTable(temps) {
+        const rows = pronoms.map(p => `
+          <tr>
+            <td>${p.label}</td>
+            <td class="conj-m">${temps[p.m] || ''}</td>
+            <td class="conj-f">${temps[p.f] || ''}</td>
+          </tr>`).join('');
+        return `<table class="conj-table">
+          <thead><tr><th></th><th>Masculin</th><th>Féminin</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+      }
+
+      document.getElementById('conj-contenu').innerHTML = `
+        <div class="conj-section-title">Présent</div>
+        ${buildTable(data.present)}
+        <div class="conj-section-title">Passé</div>
+        ${buildTable(data.passe)}
+        <div class="conj-section-title">Futur</div>
+        ${buildTable(data.futur)}
+      `;
+    } catch (err) {
+      document.getElementById('conj-contenu').innerHTML =
+        `<div class="panel-loading">❌ Erreur : ${err.message}</div>`;
+    }
   }
 </script>
 

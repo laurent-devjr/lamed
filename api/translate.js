@@ -19,7 +19,9 @@ Réponds UNIQUEMENT avec ce format JSON, sans aucun texte autour :
   "traduction": "traduction du mot dans ce contexte",
   "badges": ["nature du mot", "temps ou genre si pertinent"],
   "racine": "les 3 lettres de la racine hébraïque et leur sens",
-  "analyse": "2-3 lignes : explication linguistique, forme dans le texte vs forme de base, autres sens courants"
+  "analyse": "2-3 lignes : explication linguistique, forme dans le texte vs forme de base, autres sens courants",
+  "estVerbe": true ou false selon que le mot est un verbe,
+  "infinitif": "si estVerbe est true : l'infinitif du verbe en hébreu (forme לִ...), sinon null"
 }`;
 
   try {
