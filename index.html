@@ -316,19 +316,27 @@
       border-bottom: 1px solid #f9f9f7;
       vertical-align: middle;
     }
-    .conj-table td:first-child {
-      color: #aaa;
-      font-size: 12px;
-      white-space: nowrap;
-    }
-    .conj-table td:last-child {
+    .conj-table td.conj-m {
+      color: #185fa5;
       direction: rtl;
       text-align: right;
       font-size: 17px;
-      color: #2c2c2a;
     }
-    .conj-table td.conj-m { color: #185fa5; }
-    .conj-table td.conj-f { color: #b5420a; }
+    .conj-table td.conj-f {
+      color: #b5420a;
+      direction: rtl;
+      text-align: right;
+      font-size: 17px;
+    }
+    .conj-table td.conj-pronoun {
+      color: #aaa;
+      font-size: 12px;
+      white-space: nowrap;
+      text-align: right;
+      direction: rtl;
+      line-height: 1.6;
+    }
+    .conj-pronoun-f { color: #b5420a; }
     @media (max-width: 700px) {
       .conj-panel {
         top: 0; left: 0; right: 0; bottom: 0;
@@ -645,33 +653,33 @@ function nouveauTexte() {
       if (data.error) throw new Error(data.error);
 
       const pronoms = [
-        { key: 'ani',     label: 'אני',     m: 'ani_m',      f: 'ani_f' },
-        { key: 'ata_at',  label: 'אתה / את', m: 'ata',       f: 'at' },
-        { key: 'hou_hi',  label: 'הוא / היא', m: 'hou',      f: 'hi' },
-        { key: 'anah',    label: 'אנחנו',    m: 'anahnou_m',  f: 'anahnou_f' },
-        { key: 'atem',    label: 'אתם / אתן', m: 'atem',     f: 'aten' },
-        { key: 'hem',     label: 'הם / הן',  m: 'hem',        f: 'hen' },
+        { key: 'ani',    lm: 'אני / Je',        lf: 'אני / Je',        m: 'ani_m',     f: 'ani_f' },
+        { key: 'ata_at', lm: 'אתה / Tu (m)',     lf: 'את / Tu (f)',     m: 'ata',       f: 'at' },
+        { key: 'hou_hi', lm: 'הוא / Il',         lf: 'היא / Elle',      m: 'hou',       f: 'hi' },
+        { key: 'anah',   lm: 'אנחנו / Nous',     lf: 'אנחנו / Nous',    m: 'anahnou_m', f: 'anahnou_f' },
+        { key: 'atem',   lm: 'אתם / Vous (m)',   lf: 'אתן / Vous (f)',  m: 'atem',      f: 'aten' },
+        { key: 'hem',    lm: 'הם / Ils',         lf: 'הן / Elles',      m: 'hem',       f: 'hen' },
       ];
 
       function buildTable(temps) {
         const rows = pronoms.map(p => `
           <tr>
-            <td>${p.label}</td>
             <td class="conj-m">${temps[p.m] || ''}</td>
             <td class="conj-f">${temps[p.f] || ''}</td>
+            <td class="conj-pronoun">${p.lm}<br><span class="conj-pronoun-f">${p.lf}</span></td>
           </tr>`).join('');
         return `<table class="conj-table">
-          <thead><tr><th></th><th>Masculin</th><th>Féminin</th></tr></thead>
+          <thead><tr><th>Masculin / זכר</th><th>Féminin / נקבה</th><th></th></tr></thead>
           <tbody>${rows}</tbody>
         </table>`;
       }
 
       document.getElementById('conj-contenu').innerHTML = `
-        <div class="conj-section-title">Présent</div>
+        <div class="conj-section-title">Présent / הווה</div>
         ${buildTable(data.present)}
-        <div class="conj-section-title">Passé</div>
+        <div class="conj-section-title">Passé / עבר</div>
         ${buildTable(data.passe)}
-        <div class="conj-section-title">Futur</div>
+        <div class="conj-section-title">Futur / עתיד</div>
         ${buildTable(data.futur)}
       `;
     } catch (err) {
