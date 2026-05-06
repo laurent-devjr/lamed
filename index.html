@@ -240,6 +240,15 @@
       line-height: 1.7;
       margin-bottom: 14px;
     }
+    .panel-niqqud {
+      font-size: 26px;
+      direction: rtl;
+      text-align: right;
+      color: #2c2c2a;
+      font-weight: 500;
+      margin-bottom: 14px;
+      line-height: 2;
+    }
     .panel-loading {
       color: #aaa;
       font-size: 14px;
@@ -556,7 +565,12 @@
         ? `<button class="btn-conjugaison" onclick="afficherConjugaisons('${json.infinitif.replace(/'/g, "\\'")}')">📊 Conjugaisons →</button>`
         : '';
 
+      const niqqud = json.motAvecNiqqud
+        ? `<div class="panel-niqqud">${json.motAvecNiqqud}</div><div class="divider"></div>`
+        : '';
+
       document.getElementById('panel-contenu').innerHTML = `
+        ${niqqud}
         <div class="panel-label">Racine</div>
         <div class="panel-val">${json.racine}</div>
         <div class="panel-label">Analyse</div>

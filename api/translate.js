@@ -15,11 +15,16 @@ Texte hébreu : "${texte}"`
 
 Il a cliqué sur le mot : "${mot}"
 
+Avant de répondre, effectue ces deux dérivations en silence :
+1. Identifie la racine : retire les préfixes (ה, ו, ב, כ, ל, מ, ש...), suffixes (ים, ות, ה, י, ך...) et patterns de binyan pour isoler les 3 lettres radicales exactes. Si le mot est d'origine étrangère ou ne possède pas de racine sémitique, indique-le.
+2. Vocalise le mot : ajoute les niqqoud complets correspondant à la forme exacte du mot dans ce contexte.
+
 Réponds UNIQUEMENT avec ce format JSON, sans aucun texte autour :
 {
   "traduction": "traduction du mot dans ce contexte",
+  "motAvecNiqqud": "le mot vocalisé avec ses niqqoud complets dans sa forme du texte",
   "badges": ["nature du mot", "temps ou genre si pertinent"],
-  "racine": "les 3 lettres de la racine hébraïque et leur sens",
+  "racine": "les 3 lettres radicales (ex : כ-ת-ב) et le sens fondamental de la racine",
   "analyse": "2-3 lignes : explication linguistique, forme dans le texte vs forme de base, autres sens courants",
   "estVerbe": true ou false selon que le mot est un verbe,
   "infinitif": "si estVerbe est true : l'infinitif du verbe en hébreu (forme לִ...), sinon null"
