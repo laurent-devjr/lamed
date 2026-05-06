@@ -6,8 +6,9 @@ export default async function handler(req, res) {
   const { mot, texte, type } = req.body;
 
   const prompt = type === 'traduction_complete'
-    ? `Tu es un expert traducteur d'hébreu. Traduis ce texte hébreu en français. 
-La traduction doit être fidèle et précise, mais écrite en bon français naturel et fluide. 
+    ? `Tu es un expert traducteur d'hébreu. Traduis ce texte hébreu en français.
+La traduction doit être fidèle et précise, mais écrite en bon français naturel et fluide.
+Conserve EXACTEMENT la mise en page du texte original : chaque retour à la ligne, chaque saut de paragraphe et chaque ligne vide doit être reproduit à l'identique dans la traduction. La structure ligne par ligne de la traduction doit correspondre exactement à celle du texte hébreu source.
 Ne donne que la traduction, sans commentaire ni explication.
 Texte hébreu : "${texte}"`
     : `Tu es un expert en langue hébraïque. L'utilisateur apprend l'hébreu. Il lit ce texte : "${texte}"

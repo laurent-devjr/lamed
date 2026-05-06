@@ -140,6 +140,7 @@
   line-height: 1.9;
   color: #2c2c2a;
   display: none;
+  white-space: pre-wrap;
 }
 .translation-text.visible { display: block; }
     .he-text {
@@ -596,7 +597,7 @@ async function basculerTraduction() {
         });
 
         const data = await response.json();
-        translationText.innerHTML = data.content[0].text;
+        translationText.innerHTML = data.content[0].text.replace(/\n/g, '<br>');
         traductionChargee = true;
 
       } catch (err) {
