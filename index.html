@@ -681,12 +681,12 @@ function nouveauTexte() {
       function buildTable(temps) {
         const rows = pronoms.map(p => `
           <tr>
+            <td class="conj-pronoun">${p.lm}<br><span class="conj-pronoun-f">${p.lf}</span></td>
             <td class="conj-m">${temps[p.m] || ''}</td>
             <td class="conj-f">${temps[p.f] || ''}</td>
-            <td class="conj-pronoun">${p.lm}<br><span class="conj-pronoun-f">${p.lf}</span></td>
           </tr>`).join('');
         return `<table class="conj-table">
-          <thead><tr><th>Masculin / זכר</th><th>Féminin / נקבה</th><th></th></tr></thead>
+          <thead><tr><th></th><th>Masculin / זכר</th><th>Féminin / נקבה</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>`;
       }
