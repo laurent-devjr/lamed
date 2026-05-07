@@ -184,27 +184,32 @@
     /* PANNEAU LATÉRAL */
     .side-panel {
   width: 0;
-  overflow: hidden;
   transition: width 0.3s ease;
   flex-shrink: 0;
 }
     .side-panel.open {
-      width: 320px;
-    }
-    .panel-card {
-  background: white;
-  border: 1px solid #e8e8e8;
-  border-radius: 12px;
-  padding: 24px;
   width: 320px;
-  position: relative;
 }
-    .side-panel.open .panel-card {
+    .panel-card {
   position: fixed;
   top: 60px;
   right: 20px;
   bottom: 20px;
+  width: 320px;
+  background: white;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 24px;
   overflow-y: auto;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+    .side-panel.open .panel-card {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
 }
     .panel-close {
   position: absolute;
