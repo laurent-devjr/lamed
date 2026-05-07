@@ -8,6 +8,34 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Champs "image" et "mediaType" requis' });
   }
 
+  const prompt = "Ce document contient du texte en hébreu. Extrais uniquement le texte hébreu que tu vois, sans aucune traduction ni commentaire. Retourne uniquement le texte hébreu brut, tel quel. Conserve exactement les retours à la ligne du texte original. Chaque ligne du texte dans l'image doit correspondre à une ligne dans ta réponse.";
+
+  const isPdf = mediaType === 'application/pdf';
+
+  const contentBlock = isPdf
+    ? [
+        {
+          type: 'document',
+          source: {
+            type: 'base64',
+            media_type: 'application/pdf',
+            data: image
+          }
+        },
+        { type: 'text', text: prompt }
+      ]
+    : [
+        {
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: mediaType,
+            data: image
+          }
+        },
+        { type: 'text', text: prompt }
+      ];
+
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -18,23 +46,7 @@ export default async function handler(req, res) {
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 2000,
-      messages: [{
-        role: 'user',
-        content: [
-          {
-            type: 'image',
-            source: {
-              type: 'base64',
-              media_type: mediaType,
-              data: image
-            }
-          },
-          {
-            type: 'text',
-            text: "Ce document contient du texte en hébreu. Extrais uniquement le texte hébreu que tu vois, sans aucune traduction ni commentaire. Retourne uniquement le texte hébreu brut, tel quel. Conserve exactement les retours à la ligne du texte original. Chaque ligne du texte dans l'image doit correspondre à une ligne dans ta réponse."
-          }
-        ]
-      }]
+      messages: [{ role: 'user', content: contentBlock }]
     })
   });
 
