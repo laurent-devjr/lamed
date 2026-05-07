@@ -146,16 +146,35 @@
     .he-text {
       direction: rtl;
       font-size: 22px;
-      line-height: 2.4;
+      line-height: 1.9;
       color: #2c2c2a;
     }
     .word {
       cursor: pointer;
-      padding: 2px 5px;
+      padding: 1px 3px;
       border-radius: 4px;
       display: inline-block;
       transition: background 0.15s;
     }
+    .analyse-spinner {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 0 2px;
+      color: #aaa;
+      font-size: 13px;
+    }
+    .analyse-spinner.visible { display: flex; }
+    .spinner-ring {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #e8e8e8;
+      border-top-color: #2c2c2a;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
     .word:hover { background: #faeeda; }
     .word.active {
       background: #faeeda;
@@ -417,8 +436,6 @@
   </div>
   <div class="nav-pills">
     <button class="pill active">Lire</button>
-    <button class="pill" onclick="window.location.href='test-niveau.html'">Test de niveau</button>
-    <button class="pill">Exercices</button>
     <button class="pill">Historique</button>
 </div>
 </div>
@@ -435,8 +452,12 @@
       <textarea id="input" placeholder="הדבק כאן טקסט בעברית..."></textarea>
       <div class="btn-row">
         <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="ocrPhoto(this)">
-        <button class="btn-photo" onclick="document.getElementById('photoInput').click()">📷 Photo</button>
-        <button class="btn-primary" onclick="afficherTexte()" style="margin-left:8px">Lire le texte ▶</button>
+        <button class="btn-photo" onclick="document.getElementById('photoInput').click()">Importer</button>
+        <button class="btn-primary" onclick="afficherTexte()" style="margin-left:8px">Analyser le texte ▶</button>
+      </div>
+      <div class="analyse-spinner" id="analyseSpinner">
+        <div class="spinner-ring"></div>
+        <span id="analyseSpinnerLabel">Analyse en cours...</span>
       </div>
     </div>
 
@@ -482,8 +503,10 @@
     input.value = '';
 
     const textarea = document.getElementById('input');
-    textarea.value = 'Lecture du texte en cours...';
+    textarea.value = '';
     textarea.disabled = true;
+    document.getElementById('analyseSpinnerLabel').textContent = 'Lecture de l\'image en cours...';
+    document.getElementById('analyseSpinner').classList.add('visible');
 
     const reader = new FileReader();
     reader.onload = async (e) => {
@@ -506,6 +529,7 @@
       } finally {
         textarea.disabled = false;
         textarea.focus();
+        document.getElementById('analyseSpinner').classList.remove('visible');
       }
     };
     reader.readAsDataURL(file);
@@ -515,22 +539,27 @@
     const texte = document.getElementById('input').value.trim();
     if (!texte) return;
 
-    // Nettoie les niqqoud
-    const textePropre = texte.replace(/[\u0591-\u05C7]/g, '');
-    const lignes = textePropre.split(/\n/);
+    document.getElementById('analyseSpinnerLabel').textContent = 'Analyse en cours...';
+    document.getElementById('analyseSpinner').classList.add('visible');
 
-    const output = document.getElementById('output');
-    output.innerHTML = lignes.map(ligne => {
-      const mots = ligne.trim().split(/\s+/).filter(m => m);
-      if (!mots.length) return '<br>';
-      return mots.map(mot =>
-        `<span class="word" onclick="traduire(this, '${mot.replace(/'/g, "\\'")}')">${mot}</span>`
-      ).join(' ');
-    }).join('<br>');
+    requestAnimationFrame(() => {
+      // Nettoie les niqqoud
+      const textePropre = texte.replace(/[\u0591-\u05C7]/g, '');
+      const lignes = textePropre.split(/\n/);
 
-    // Remplace la zone de saisie par le texte cliquable
-    document.getElementById('inputCard').style.display = 'none';
-    document.getElementById('textCard').classList.add('visible');
+      const output = document.getElementById('output');
+      output.innerHTML = lignes.map(ligne => {
+        const mots = ligne.trim().split(/\s+/).filter(m => m);
+        if (!mots.length) return '<br>';
+        return mots.map(mot =>
+          `<span class="word" onclick="traduire(this, '${mot.replace(/'/g, "\\'")}')">$\{mot}</span>`
+        ).join(' ');
+      }).join('<br>');
+
+      document.getElementById('analyseSpinner').classList.remove('visible');
+      document.getElementById('inputCard').style.display = 'none';
+      document.getElementById('textCard').classList.add('visible');
+    });
   }
 
   async function traduire(el, mot) {
