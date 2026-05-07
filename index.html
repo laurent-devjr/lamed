@@ -541,7 +541,7 @@
         const mots = ligne.trim().split(/\s+/).filter(m => m);
         if (!mots.length) return '<br>';
         return mots.map(mot =>
-          `<span class="word" onclick="traduire(this, '${mot.replace(/'/g, "\\'")}'">${mot}</span>`
+          `<span class="word" onclick="traduire(this, '${mot.replace(/'/g, "\\'")}')">${mot}</span>`
         ).join(' ');
       }).join('<br>');
 
