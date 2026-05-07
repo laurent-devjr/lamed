@@ -182,35 +182,10 @@
     }
 
     /* PANNEAU LATÉRAL */
-    .side-panel {
-  width: 0;
-  transition: width 0.3s ease;
-  flex-shrink: 0;
-}
-    .side-panel.open {
-  width: 320px;
-}
-    .panel-card {
-  position: fixed;
-  top: 60px;
-  right: 20px;
-  bottom: 20px;
-  width: 320px;
-  background: white;
-  border: 1px solid #e8e8e8;
-  border-radius: 12px;
-  padding: 24px;
-  overflow-y: auto;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateX(10px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-    .side-panel.open .panel-card {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateX(0);
-}
+    .side-panel { width: 0; transition: width 0.3s ease; flex-shrink: 0; }
+    .side-panel.open { width: 340px; }
+    .panel-card { position: fixed; top: 60px; right: 20px; bottom: 20px; width: 320px; background: white; border: 1px solid #e8e8e8; border-radius: 12px; padding: 24px; overflow-y: auto; z-index: 100; opacity: 0; pointer-events: none; transform: translateX(12px); transition: opacity 0.2s ease, transform 0.2s ease; }
+    .side-panel.open .panel-card { opacity: 1; pointer-events: auto; transform: translateX(0); }
     .panel-close {
   position: absolute;
   top: 12px;
@@ -640,6 +615,7 @@ async function basculerTraduction() {
     // Passe en mode traduction
     modeTraduction = true;
     btn.textContent = 'Original';
+    const texteHebreu = output.innerText;
     output.style.display = 'none';
     fermerPanel();
 
@@ -647,7 +623,7 @@ async function basculerTraduction() {
       translationText.classList.add('visible');
       translationText.innerHTML = '<em style="color:#aaa">Traduction en cours...</em>';
 
-      const texteHebreu = output.innerText;
+
       try {
         const response = await fetch('/api/translate', {
           method: 'POST',
