@@ -414,9 +414,9 @@
     .seg:hover { background: #f0f0ee; }
     .seg.hl-primary { background: #faeeda; outline: 1px solid #ba7517; }
     .seg.hl-echo { background: #ede9f8; outline: 1px solid #7c3aed; }
-    .detail-bar { display: none; padding: 10px 0 4px; }
+    .detail-bar { display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 300; }
     .detail-bar.visible { display: block; }
-    .btn-detail { font-size: 13px; padding: 7px 16px; background: #2c2c2a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
+    .btn-detail { font-size: 13px; padding: 10px 22px; background: #2c2c2a; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; box-shadow: 0 4px 16px rgba(0,0,0,0.18); white-space: nowrap; }
     .btn-detail:hover { background: #444; }
     @media (max-width: 700px) {
       .parallel-view.visible { flex-direction: column; }
