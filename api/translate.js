@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   const { mot, texte, type } = req.body;
 
   if (type === 'traduction_complete') {
-    const prompt = 'Tu es un expert traducteur d\'hébreu. Découpe ce texte hébreu en segments de sens (chaque segment = groupe de mots formant une unité cohérente). Pour chaque segment fournis la traduction française. Les sauts de ligne deviennent {"he":"\\n","fr":"\\n"}. Retourne UNIQUEMENT un JSON valide : {"segments":[{"he":"...","fr":"..."},...]}. Aucun commentaire, aucun backtick. Texte : ' + texte;
+    const prompt = 'Tu es un expert traducteur d\'hébreu. Découpe ce texte hébreu mot par mot et fournis la traduction française de chaque mot. Règle : chaque segment doit être le plus petit possible — idéalement un seul mot hébreu. Un groupe de mots n\'est justifié que dans deux cas : (1) expression figée ou idiomatique indissociable (ex : "bien sûr", "Tel Aviv"), ou (2) un seul mot hébreu se traduit nécessairement par plusieurs mots français (ex : הולך → "est en train d\'aller"). Dans tous les autres cas, chaque mot hébreu est son propre segment. Les sauts de ligne du texte original deviennent {"he":"\\n","fr":"\\n"}. Retourne UNIQUEMENT un JSON valide : {"segments":[{"he":"...","fr":"..."},...]}. Aucun commentaire, aucun backtick. Texte : ' + texte;
 
     try {
       const response = await fetch('https://api.anthropic.com/v1/messages', {
