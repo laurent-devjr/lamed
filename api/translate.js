@@ -5,13 +5,35 @@ export default async function handler(req, res) {
 
   const { mot, texte, type } = req.body;
 
-  const prompt = type === 'traduction_complete'
-    ? `Tu es un expert traducteur d'hébreu. Traduis ce texte hébreu en français.
-La traduction doit être fidèle et précise, mais écrite en bon français naturel et fluide.
-Conserve EXACTEMENT la mise en page du texte original : chaque retour à la ligne, chaque saut de paragraphe et chaque ligne vide doit être reproduit à l'identique dans la traduction. La structure ligne par ligne de la traduction doit correspondre exactement à celle du texte hébreu source.
-Ne donne que la traduction, sans commentaire ni explication.
-Texte hébreu : "${texte}"`
-    : `Tu es un expert en langue hébraïque. L'utilisateur apprend l'hébreu. Il lit ce texte : "${texte}"
+  if (type === 'traduction_complete') {
+    const prompt = 'Tu es un expert traducteur d\'hébreu. Découpe ce texte hébreu en segments de sens (chaque segment = groupe de mots formant une unité cohérente). Pour chaque segment fournis la traduction française. Les sauts de ligne deviennent {"he":"\\n","fr":"\\n"}. Retourne UNIQUEMENT un JSON valide : {"segments":[{"he":"...","fr":"..."},...]}. Aucun commentaire, aucun backtick. Texte : ' + texte;
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 4000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      const data = await response.json();
+      const texteReponse = data.content[0].text.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(texteReponse);
+      return res.status(200).json(parsed);
+
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  const prompt = `Tu es un expert en langue hébraïque. L'utilisateur apprend l'hébreu. Il lit ce texte : "${texte}"
 
 Il a cliqué sur le mot : "${mot}"
 
@@ -39,7 +61,7 @@ Réponds UNIQUEMENT avec ce format JSON, sans aucun texte autour :
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: type === 'traduction_complete' ? 'claude-sonnet-4-20250514' : 'claude-haiku-4-5-20251001',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 1000,
         messages: [{ role: 'user', content: prompt }]
       })

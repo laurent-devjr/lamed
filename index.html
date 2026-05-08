@@ -405,6 +405,24 @@
     border-bottom: none;
   }
 }
+    .parallel-view { display: none; }
+    .parallel-view.visible { display: flex; flex-direction: row; gap: 0; }
+    .parallel-col { flex: 1; padding: 16px; min-width: 0; font-size: 18px; line-height: 1.8; }
+    .parallel-col.col-he { border-left: 1px solid #e8e8e8; direction: rtl; text-align: right; }
+    .parallel-col.col-fr { direction: ltr; color: #444; }
+    .seg { cursor: pointer; border-radius: 3px; padding: 1px 3px; transition: background 0.15s; display: inline; }
+    .seg:hover { background: #f0f0ee; }
+    .seg.hl-primary { background: #faeeda; outline: 1px solid #ba7517; }
+    .seg.hl-echo { background: #ede9f8; outline: 1px solid #7c3aed; }
+    .detail-bar { display: none; padding: 10px 0 4px; }
+    .detail-bar.visible { display: block; }
+    .btn-detail { font-size: 13px; padding: 7px 16px; background: #2c2c2a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
+    .btn-detail:hover { background: #444; }
+    @media (max-width: 700px) {
+      .parallel-view.visible { flex-direction: column; }
+      .parallel-col.col-he { border-left: none; border-bottom: 1px solid #e8e8e8; padding-bottom: 16px; }
+      .parallel-col { font-size: 16px; }
+    }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 </head>
@@ -448,6 +466,13 @@
     <button class="btn-secondary" id="btnTraduction" onclick="basculerTraduction()">Traduction</button>
     <button class="btn-secondary" onclick="nouveauTexte()">Nouveau texte</button>
   </div>
+  <div class="detail-bar" id="detailBar">
+    <button class="btn-detail" onclick="ouvrirDetail()">🔍 Détail</button>
+  </div>
+  <div class="parallel-view" id="parallelView">
+    <div class="parallel-col col-fr" id="parallelFr"></div>
+    <div class="parallel-col col-he" id="parallelHe"></div>
+  </div>
   <div class="he-text" id="output"></div>
   <div class="translation-text" id="translationText"></div>
 </div>
@@ -477,6 +502,8 @@
 
 <script>
   let motActif = null;
+  let segmentsData = null;
+  let motDetailCourant = null;
 
   async function ocrPhoto(input) {
     const file = input.files[0];
@@ -609,46 +636,40 @@ let modeTraduction = false;
 async function basculerTraduction() {
   const btn = document.getElementById('btnTraduction');
   const output = document.getElementById('output');
-  const translationText = document.getElementById('translationText');
-
+  const parallelView = document.getElementById('parallelView');
+  const detailBar = document.getElementById('detailBar');
   if (!modeTraduction) {
-    // Passe en mode traduction
     modeTraduction = true;
     btn.textContent = 'Original';
     const texteHebreu = output.innerText;
     output.style.display = 'none';
     fermerPanel();
-
     if (!traductionChargee) {
-      translationText.classList.add('visible');
-      translationText.innerHTML = '<em style="color:#aaa">Traduction en cours...</em>';
-
-
+      parallelView.classList.add('visible');
+      document.getElementById('parallelFr').innerHTML = '<em style="color:#aaa">Traduction en cours...</em>';
+      document.getElementById('parallelHe').innerHTML = '';
       try {
         const response = await fetch('/api/translate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ texte: texteHebreu, type: 'traduction_complete' })
         });
-
         const data = await response.json();
-        translationText.innerHTML = data.content[0].text.replace(/\n/g, '<br>');
+        segmentsData = data.segments;
+        renderParallel(segmentsData);
         traductionChargee = true;
-
       } catch (err) {
-        translationText.innerHTML = `<em style="color:red">Erreur : ${err.message}</em>`;
+        document.getElementById('parallelFr').innerHTML = '<em style="color:red">Erreur : ' + err.message + '</em>';
       }
-
     } else {
-      translationText.classList.add('visible');
+      parallelView.classList.add('visible');
     }
-
   } else {
-    // Revient à l'original
     modeTraduction = false;
     btn.textContent = 'Traduction';
-    output.style.display = 'block';
-    translationText.classList.remove('visible');
+    output.style.display = '';
+    parallelView.classList.remove('visible');
+    detailBar.classList.remove('visible');
   }
 }
 
@@ -661,6 +682,12 @@ function nouveauTexte() {
   traductionChargee = false;
   modeTraduction = false;
   document.getElementById('btnTraduction').textContent = 'Traduction';
+  segmentsData = null;
+  motDetailCourant = null;
+  document.getElementById('parallelView').classList.remove('visible');
+  document.getElementById('detailBar').classList.remove('visible');
+  document.getElementById('parallelHe').innerHTML = '';
+  document.getElementById('parallelFr').innerHTML = '';
   fermerPanel();
 }
   function fermerPanel() {
@@ -723,6 +750,59 @@ function nouveauTexte() {
         `<div class="panel-loading">❌ Erreur : ${err.message}</div>`;
     }
   }
+
+function renderParallel(segments) {
+  let heHtml = '';
+  let frHtml = '';
+  segments.forEach((seg, i) => {
+    if (seg.he === '\n' || seg.fr === '\n') {
+      heHtml += '<br>';
+      frHtml += '<br>';
+    } else {
+      heHtml += '<span class="seg" data-idx="' + i + '" onclick="surlignerSegment(' + i + ', \'he\')">' + seg.he + '</span> ';
+      frHtml += '<span class="seg" data-idx="' + i + '" onclick="surlignerSegment(' + i + ', \'fr\')">' + seg.fr + '</span> ';
+    }
+  });
+  document.getElementById('parallelHe').innerHTML = heHtml;
+  document.getElementById('parallelFr').innerHTML = frHtml;
+}
+
+function surlignerSegment(idx, col) {
+  document.querySelectorAll('.seg').forEach(el => el.classList.remove('hl-primary', 'hl-echo'));
+  document.querySelectorAll('.seg[data-idx="' + idx + '"]').forEach(el => {
+    const dansColCliquee = el.closest('.col-' + col) !== null;
+    el.classList.add(dansColCliquee ? 'hl-primary' : 'hl-echo');
+  });
+  if (segmentsData && segmentsData[idx]) motDetailCourant = segmentsData[idx].he;
+  document.getElementById('detailBar').classList.add('visible');
+}
+
+async function ouvrirDetail() {
+  if (!motDetailCourant) return;
+  document.getElementById('panel-mot').textContent = motDetailCourant;
+  document.getElementById('panel-traduction').textContent = '';
+  document.getElementById('panel-badges').innerHTML = '';
+  document.getElementById('panel-contenu').innerHTML = '<div class="panel-loading">Analyse en cours...</div>';
+  document.getElementById('sidePanel').classList.add('open');
+  const texteComplet = document.getElementById('parallelHe').innerText;
+  try {
+    const response = await fetch('/api/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mot: motDetailCourant, texte: texteComplet, type: 'mot' })
+    });
+    const data = await response.json();
+    const texteReponse = data.content[0].text.replace(/```json|```/g, '').trim();
+    const json = JSON.parse(texteReponse);
+    document.getElementById('panel-traduction').textContent = json.traduction;
+    document.getElementById('panel-badges').innerHTML = json.badges.map(b => '<span class="badge">' + b + '</span>').join('');
+    const btnConj = json.estVerbe && json.infinitif ? '<button class="btn-conjugaison" onclick="afficherConjugaisons(\'' + json.infinitif.replace(/'/g, "\\'") + '\')">📊 Conjugaisons →</button>' : '';
+    const niqqud = json.motAvecNiqqud ? '<div class="panel-niqqud">' + json.motAvecNiqqud + '</div><div class="divider"></div>' : '';
+    document.getElementById('panel-contenu').innerHTML = niqqud + '<div class="panel-label">Racine</div><div class="panel-val">' + json.racine + '</div><div class="panel-label">Analyse</div><div class="panel-val">' + json.analyse + '</div>' + btnConj;
+  } catch (err) {
+    document.getElementById('panel-contenu').innerHTML = '<div class="panel-loading">❌ Erreur : ' + err.message + '</div>';
+  }
+}
 </script>
 
 </body>
