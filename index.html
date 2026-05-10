@@ -409,6 +409,7 @@
     .parallel-view.visible { display: flex; flex-direction: row; gap: 0; height: calc(100vh - 200px); }
     .parallel-col { flex: 1; padding: 16px; min-width: 0; font-size: 18px; line-height: 1.8; overflow-y: auto; height: 100%; }
     .parallel-col.col-he { border-left: 1px solid #e8e8e8; direction: rtl; text-align: right; }
+    .parallel-separator { display: none; }
     .parallel-col.col-fr { direction: ltr; color: #444; }
     .seg { cursor: pointer; border-radius: 3px; padding: 1px 3px; transition: background 0.15s; display: inline; }
     .seg:hover { background: #f0f0ee; }
@@ -421,7 +422,8 @@
     @media (max-width: 700px) {
       .parallel-view.visible { height: calc(100vh - 220px); display: flex; flex-direction: column; }
       .parallel-col { flex: 1; height: 50%; max-height: 50%; overflow-y: auto; min-height: 0; font-size: 16px; }
-      .parallel-col.col-he { border-left: none; border-bottom: none; order: -1; position: relative; }
+      .parallel-col.col-he { border-left: none; border-bottom: none; order: -2; position: relative; }
+      .parallel-separator { display: block; width: 100%; height: 3px; background: linear-gradient(to right, transparent, #c8a96e, transparent); flex-shrink: 0; order: -1; }
       .parallel-col.col-he::after {
         content: '· עב / FR ·';
         display: flex;
@@ -484,6 +486,7 @@
   </div>
   <div class="parallel-view" id="parallelView">
     <div class="parallel-col col-fr" id="parallelFr"></div>
+    <div class="parallel-separator"></div>
     <div class="parallel-col col-he" id="parallelHe"></div>
   </div>
   <div class="he-text" id="output"></div>
@@ -659,6 +662,7 @@ async function basculerTraduction() {
     fermerPanel();
     if (!traductionChargee) {
       parallelView.classList.add('visible');
+      ajusterHauteurParallele();
       document.getElementById('parallelFr').innerHTML = '<em style="color:#aaa">Traduction en cours...</em>';
       document.getElementById('parallelHe').innerHTML = '';
       try {
@@ -676,6 +680,7 @@ async function basculerTraduction() {
       }
     } else {
       parallelView.classList.add('visible');
+      ajusterHauteurParallele();
     }
   } else {
     modeTraduction = false;
@@ -826,6 +831,19 @@ async function ouvrirDetail() {
     document.getElementById('panel-contenu').innerHTML = '<div class="panel-loading">❌ Erreur : ' + err.message + '</div>';
   }
 }
+
+function ajusterHauteurParallele() {
+  if (window.innerWidth > 700) return;
+  const topbar = document.querySelector('.topbar');
+  const toolbar = document.querySelector('.text-toolbar');
+  const topbarH = topbar ? topbar.offsetHeight : 50;
+  const toolbarH = toolbar ? toolbar.offsetHeight : 50;
+  const hauteur = window.innerHeight - topbarH - toolbarH - 80;
+  const pv = document.getElementById('parallelView');
+  if (pv) pv.style.height = hauteur + 'px';
+}
+
+window.addEventListener('resize', ajusterHauteurParallele);
 </script>
 
 </body>
