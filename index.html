@@ -406,8 +406,8 @@
   }
 }
     .parallel-view { display: none; }
-    .parallel-view.visible { display: flex; flex-direction: row; gap: 0; }
-    .parallel-col { flex: 1; padding: 16px; min-width: 0; font-size: 18px; line-height: 1.8; }
+    .parallel-view.visible { display: flex; flex-direction: row; gap: 0; height: calc(100vh - 200px); }
+    .parallel-col { flex: 1; padding: 16px; min-width: 0; font-size: 18px; line-height: 1.8; overflow-y: auto; height: 100%; }
     .parallel-col.col-he { border-left: 1px solid #e8e8e8; direction: rtl; text-align: right; }
     .parallel-col.col-fr { direction: ltr; color: #444; }
     .seg { cursor: pointer; border-radius: 3px; padding: 1px 3px; transition: background 0.15s; display: inline; }
@@ -419,9 +419,9 @@
     .btn-detail { font-size: 13px; padding: 10px 22px; background: #2c2c2a; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; box-shadow: 0 4px 16px rgba(0,0,0,0.18); white-space: nowrap; }
     .btn-detail:hover { background: #444; }
     @media (max-width: 700px) {
-      .parallel-view.visible { flex-direction: column; }
-      .parallel-col.col-he { border-left: none; border-bottom: 1px solid #e8e8e8; padding-bottom: 16px; }
-      .parallel-col { font-size: 16px; }
+      .parallel-view.visible { flex-direction: column; height: auto; }
+      .parallel-col.col-he { border-left: none; border-bottom: 1px solid #e8e8e8; padding-bottom: 16px; order: -1; height: 42vh; overflow-y: auto; }
+      .parallel-col { font-size: 16px; height: 42vh; overflow-y: auto; }
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
@@ -775,6 +775,16 @@ function surlignerSegment(idx, col) {
   });
   if (segmentsData && segmentsData[idx]) motDetailCourant = segmentsData[idx].he;
   document.getElementById('detailBar').classList.add('visible');
+
+  ['parallelHe', 'parallelFr'].forEach(colId => {
+    const colEl = document.getElementById(colId);
+    const hl = colEl.querySelector('.hl-primary, .hl-echo');
+    if (!hl) return;
+    const colRect = colEl.getBoundingClientRect();
+    const hlRect = hl.getBoundingClientRect();
+    const hlCenter = hlRect.top - colRect.top + colEl.scrollTop + hlRect.height / 2;
+    colEl.scrollTop = hlCenter - colEl.clientHeight / 2;
+  });
 }
 
 async function ouvrirDetail() {
