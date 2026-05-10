@@ -420,23 +420,11 @@
     .btn-detail { font-size: 13px; padding: 10px 22px; background: #2c2c2a; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; box-shadow: 0 4px 16px rgba(0,0,0,0.18); white-space: nowrap; }
     .btn-detail:hover { background: #444; }
     @media (max-width: 700px) {
-      .parallel-view.visible { height: calc(100vh - 220px); display: flex; flex-direction: column; }
+      .parallel-view.visible { height: calc(100svh - 140px); display: flex; flex-direction: column; }
       .parallel-col { flex: 1; height: 50%; max-height: 50%; overflow-y: auto; min-height: 0; font-size: 16px; }
-      .parallel-col.col-he { border-left: none; border-bottom: none; order: -2; position: relative; }
+      .parallel-col.col-he { border-left: none; border-bottom: none; border-top: none; margin-bottom: 0; order: -2; position: relative; }
+      .parallel-col.col-he::after { content: none; display: none; }
       .parallel-separator { display: block; width: 100%; height: 3px; background: linear-gradient(to right, transparent, #c8a96e, transparent); flex-shrink: 0; order: -1; }
-      .parallel-col.col-he::after {
-        content: '· עב / FR ·';
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 20px;
-        font-size: 11px;
-        color: #c8a96e;
-        padding: 0 8px;
-        position: relative;
-        flex-shrink: 0;
-        background: linear-gradient(to right, transparent, #c8a96e, transparent) 0 50% / 100% 2px no-repeat white;
-      }
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
@@ -662,7 +650,6 @@ async function basculerTraduction() {
     fermerPanel();
     if (!traductionChargee) {
       parallelView.classList.add('visible');
-      ajusterHauteurParallele();
       document.getElementById('parallelFr').innerHTML = '<em style="color:#aaa">Traduction en cours...</em>';
       document.getElementById('parallelHe').innerHTML = '';
       try {
@@ -680,7 +667,6 @@ async function basculerTraduction() {
       }
     } else {
       parallelView.classList.add('visible');
-      ajusterHauteurParallele();
     }
   } else {
     modeTraduction = false;
@@ -832,18 +818,6 @@ async function ouvrirDetail() {
   }
 }
 
-function ajusterHauteurParallele() {
-  if (window.innerWidth > 700) return;
-  const topbar = document.querySelector('.topbar');
-  const toolbar = document.querySelector('.text-toolbar');
-  const topbarH = topbar ? topbar.offsetHeight : 50;
-  const toolbarH = toolbar ? toolbar.offsetHeight : 50;
-  const hauteur = window.innerHeight - topbarH - toolbarH - 80;
-  const pv = document.getElementById('parallelView');
-  if (pv) pv.style.height = hauteur + 'px';
-}
-
-window.addEventListener('resize', ajusterHauteurParallele);
 </script>
 
 </body>
