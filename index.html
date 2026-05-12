@@ -269,13 +269,13 @@
       display: inline-block;
       margin-top: 14px;
       padding: 8px 14px;
-      background: #eef4fb;
-      color: #185fa5;
+      background: #dcfce7;
+      color: #16a34a;
       border-radius: 8px;
       cursor: pointer;
       font-size: 14px;
       font-weight: 500;
-      border: 1px solid #c8ddf5;
+      border: 1px solid #86efac;
       width: 100%;
       text-align: center;
     }
@@ -620,7 +620,7 @@
         .map(b => `<span class="badge">${b}</span>`).join('');
 
       const btnConj = json.estVerbe && json.infinitif
-        ? `<button class="btn-conjugaison" onclick="afficherConjugaisons('${json.infinitif.replace(/'/g, "\\'")}')">📊 Conjugaisons →</button>`
+        ? `<button class="btn-conjugaison" onclick="afficherConjugaisons('${json.infinitif.replace(/'/g, "\\'")}')">📖 Conjugaisons →</button>`
         : '';
 
       const niqqud = json.motAvecNiqqud
@@ -837,7 +837,7 @@ async function ouvrirDetail() {
     const json = JSON.parse(texteReponse);
     document.getElementById('panel-traduction').textContent = json.traduction;
     document.getElementById('panel-badges').innerHTML = json.badges.map(b => '<span class="badge">' + b + '</span>').join('');
-    const btnConj = json.estVerbe && json.infinitif ? '<button class="btn-conjugaison" onclick="afficherConjugaisons(\'' + json.infinitif.replace(/'/g, "\\'") + '\')">📊 Conjugaisons →</button>' : '';
+    const btnConj = json.estVerbe && json.infinitif ? '<button class="btn-conjugaison" onclick="afficherConjugaisons(\'' + json.infinitif.replace(/'/g, "\\'") + '\')">📖 Conjugaisons →</button>' : '';
     const niqqud = json.motAvecNiqqud ? '<div class="panel-niqqud">' + json.motAvecNiqqud + '</div><div class="divider"></div>' : '';
     document.getElementById('panel-contenu').innerHTML = niqqud + '<div class="panel-label">Racine</div><div class="panel-val">' + json.racine + '</div><div class="panel-label">Analyse</div><div class="panel-val">' + json.analyse + '</div>' + btnConj;
   } catch (err) {
