@@ -719,6 +719,11 @@ function nouveauTexte() {
   document.getElementById('detailBar').classList.remove('visible');
   document.getElementById('parallelHe').innerHTML = '';
   document.getElementById('parallelFr').innerHTML = '';
+  document.body.classList.remove('mode-parallele');
+  document.documentElement.classList.remove('mode-parallele');
+  document.getElementById('parallelView').style.top = '';
+  document.getElementById('parallelView').style.left = '';
+  document.getElementById('parallelView').style.right = '';
   fermerPanel();
 }
   function fermerPanel() {
