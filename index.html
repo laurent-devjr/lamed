@@ -659,9 +659,8 @@ async function basculerTraduction() {
     document.documentElement.classList.add('mode-parallele');
     if (!traductionChargee) {
       parallelView.classList.add('visible');
-      const topbarH = document.querySelector('.topbar').offsetHeight;
-      const toolbarH = document.querySelector('.text-toolbar').offsetHeight;
-      parallelView.style.top = (topbarH + toolbarH + 8) + 'px';
+      const toolbarRect = document.querySelector('.text-toolbar').getBoundingClientRect();
+      parallelView.style.top = toolbarRect.bottom + 8 + 'px';
       document.getElementById('parallelFr').innerHTML = '<em style="color:#aaa">Traduction en cours...</em>';
       document.getElementById('parallelHe').innerHTML = '';
       try {
@@ -679,9 +678,8 @@ async function basculerTraduction() {
       }
     } else {
       parallelView.classList.add('visible');
-      const topbarH = document.querySelector('.topbar').offsetHeight;
-      const toolbarH = document.querySelector('.text-toolbar').offsetHeight;
-      parallelView.style.top = (topbarH + toolbarH + 8) + 'px';
+      const toolbarRect = document.querySelector('.text-toolbar').getBoundingClientRect();
+      parallelView.style.top = toolbarRect.bottom + 8 + 'px';
     }
   } else {
     modeTraduction = false;
