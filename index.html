@@ -661,6 +661,10 @@ async function basculerTraduction() {
       parallelView.classList.add('visible');
       const toolbarRect = document.querySelector('.text-toolbar').getBoundingClientRect();
       parallelView.style.top = toolbarRect.bottom + 8 + 'px';
+      const cardRect = document.getElementById('textCard').getBoundingClientRect();
+      parallelView.style.left = cardRect.left + 'px';
+      parallelView.style.right = (window.innerWidth - cardRect.right) + 'px';
+      parallelView.style.borderRadius = '0 0 12px 12px';
       document.getElementById('parallelFr').innerHTML = '<em style="color:#aaa">Traduction en cours...</em>';
       document.getElementById('parallelHe').innerHTML = '';
       try {
@@ -680,6 +684,10 @@ async function basculerTraduction() {
       parallelView.classList.add('visible');
       const toolbarRect = document.querySelector('.text-toolbar').getBoundingClientRect();
       parallelView.style.top = toolbarRect.bottom + 8 + 'px';
+      const cardRect = document.getElementById('textCard').getBoundingClientRect();
+      parallelView.style.left = cardRect.left + 'px';
+      parallelView.style.right = (window.innerWidth - cardRect.right) + 'px';
+      parallelView.style.borderRadius = '0 0 12px 12px';
     }
   } else {
     modeTraduction = false;
@@ -687,6 +695,9 @@ async function basculerTraduction() {
     output.style.display = '';
     parallelView.classList.remove('visible');
     parallelView.style.top = '';
+    parallelView.style.left = '';
+    parallelView.style.right = '';
+    parallelView.style.borderRadius = '';
     document.body.classList.remove('mode-parallele');
     document.documentElement.classList.remove('mode-parallele');
     detailBar.classList.remove('visible');
