@@ -30,7 +30,11 @@ ${texte}`;
       const traductionFr = data1.content[0].text.trim();
 
       // Appel 2 : Haiku aligne mécaniquement la traduction avec le texte hébreu mot à mot
-      const promptSegments = `Tu reçois un texte hébreu et sa traduction française. Aligne-les segment par segment. Chaque segment hébreu doit être le plus petit possible (idéalement un mot). Le segment français correspondant doit être un extrait exact de la traduction fournie. Les sauts de ligne deviennent {"he":"\\n","fr":"\\n"}.
+      const promptSegments = `Tu reçois un texte hébreu et sa traduction française. Aligne-les segment par segment. Règles :
+- Chaque segment hébreu doit être le plus petit possible (idéalement un mot).
+- Le segment français correspondant doit être un extrait exact de la traduction fournie.
+- La ponctuation (virgules, points, tirets, guillemets...) doit être attachée au segment qui la précède dans le texte hébreu — ne l'omets jamais.
+- Les sauts de ligne deviennent {"he":"\\n","fr":"\\n"}.
 
 Retourne UNIQUEMENT ce JSON valide, sans commentaire ni backtick :
 {"segments":[{"he":"...","fr":"..."},...]}
