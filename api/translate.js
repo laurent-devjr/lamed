@@ -6,7 +6,18 @@ export default async function handler(req, res) {
   const { mot, texte, type } = req.body;
 
   if (type === 'traduction_complete') {
-    const prompt = 'Tu es un expert traducteur d\'hébreu. Découpe ce texte hébreu mot par mot et fournis la traduction française de chaque mot. Règle : chaque segment doit être le plus petit possible — idéalement un seul mot hébreu. Un groupe de mots n\'est justifié que dans deux cas : (1) expression figée ou idiomatique indissociable (ex : "bien sûr", "Tel Aviv"), ou (2) un seul mot hébreu se traduit nécessairement par plusieurs mots français (ex : הולך → "est en train d\'aller"). Dans tous les autres cas, chaque mot hébreu est son propre segment. Les sauts de ligne du texte original deviennent {"he":"\\n","fr":"\\n"}. Retourne UNIQUEMENT un JSON valide : {"segments":[{"he":"...","fr":"..."},...]}. Aucun commentaire, aucun backtick. Texte : ' + texte;
+    const prompt = `Tu es un traducteur expert en hébreu moderne israélien. Ton travail se fait en deux étapes :
+
+ÉTAPE 1 : Produis une traduction complète, fidèle, fluide et de haute qualité littéraire du texte hébreu en français. La traduction doit être naturelle, agréable à lire, avec un bon niveau de langue.
+
+ÉTAPE 2 : À partir de ta traduction, crée des segments alignés avec le texte hébreu original. Chaque segment doit être le plus petit possible (idéalement un mot, ou un petit groupe indissociable). Les segments français doivent être des extraits exacts de ta traduction de l'étape 1.
+
+Retourne UNIQUEMENT ce JSON valide, sans commentaire ni backtick :
+{"segments":[{"he":"mot hébreu","fr":"traduction correspondante"},...]}
+
+Les sauts de ligne sont représentés par {"he":"\\n","fr":"\\n"}.
+
+Texte hébreu : ${texte}`;
 
     try {
       const response = await fetch('https://api.anthropic.com/v1/messages', {
