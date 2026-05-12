@@ -6,21 +6,14 @@ export default async function handler(req, res) {
   const { mot, texte, type } = req.body;
 
   if (type === 'traduction_complete') {
-    const prompt = `Tu es un traducteur expert en hébreu moderne israélien. Ton travail se fait en deux étapes :
-
-ÉTAPE 1 : Produis une traduction complète, fidèle, fluide et de haute qualité littéraire du texte hébreu en français. La traduction doit être naturelle, agréable à lire, avec un bon niveau de langue.
-
-ÉTAPE 2 : À partir de ta traduction, crée des segments alignés avec le texte hébreu original. Chaque segment doit être le plus petit possible (idéalement un mot, ou un petit groupe indissociable). Les segments français doivent être des extraits exacts de ta traduction de l'étape 1.
-
-Retourne UNIQUEMENT ce JSON valide, sans commentaire ni backtick :
-{"segments":[{"he":"mot hébreu","fr":"traduction correspondante"},...]}
-
-Les sauts de ligne sont représentés par {"he":"\\n","fr":"\\n"}.
-
-Texte hébreu : ${texte}`;
-
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      // Appel 1 : Sonnet produit une traduction libre, fluide, sans contrainte de format
+      const promptTraduction = `Tu es un traducteur expert en hébreu moderne israélien. Traduis le texte hébreu suivant en français. La traduction doit être complète, fidèle, fluide et de haute qualité littéraire — naturelle, agréable à lire, avec un bon niveau de langue. Retourne uniquement la traduction française, sans commentaire ni explication.
+
+Texte hébreu :
+${texte}`;
+
+      const res1 = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -30,12 +23,39 @@ Texte hébreu : ${texte}`;
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 4000,
-          messages: [{ role: 'user', content: prompt }]
+          messages: [{ role: 'user', content: promptTraduction }]
         })
       });
+      const data1 = await res1.json();
+      const traductionFr = data1.content[0].text.trim();
 
-      const data = await response.json();
-      const texteReponse = data.content[0].text.replace(/```json|```/g, '').trim();
+      // Appel 2 : Haiku aligne mécaniquement la traduction avec le texte hébreu mot à mot
+      const promptSegments = `Tu reçois un texte hébreu et sa traduction française. Aligne-les segment par segment. Chaque segment hébreu doit être le plus petit possible (idéalement un mot). Le segment français correspondant doit être un extrait exact de la traduction fournie. Les sauts de ligne deviennent {"he":"\\n","fr":"\\n"}.
+
+Retourne UNIQUEMENT ce JSON valide, sans commentaire ni backtick :
+{"segments":[{"he":"...","fr":"..."},...]}
+
+Texte hébreu :
+${texte}
+
+Traduction française :
+${traductionFr}`;
+
+      const res2 = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 4000,
+          messages: [{ role: 'user', content: promptSegments }]
+        })
+      });
+      const data2 = await res2.json();
+      const texteReponse = data2.content[0].text.replace(/```json|```/g, '').trim();
       const parsed = JSON.parse(texteReponse);
       return res.status(200).json(parsed);
 
