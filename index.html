@@ -422,10 +422,10 @@
     .seg:hover { background: #f0f0ee; }
     .seg.hl-primary { background: #faeeda; outline: 1px solid #ba7517; }
     .seg.hl-echo { background: #ede9f8; outline: 1px solid #7c3aed; }
-    .detail-bar { display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 300; }
-    .detail-bar.visible { display: block; }
-    .btn-detail { font-size: 13px; padding: 10px 22px; background: #2c2c2a; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; box-shadow: 0 4px 16px rgba(0,0,0,0.18); white-space: nowrap; }
-    .btn-detail:hover { background: #444; }
+    .detail-bar { display: none; }
+    .detail-bar.visible { display: inline-flex; }
+    .btn-detail { font-size: 13px; padding: 7px 14px; background: #0891b2; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
+    .btn-detail:hover { background: #0e7490; }
     @media (max-width: 700px) {
       .parallel-view.visible { flex-direction: column; }
       .parallel-col { font-size: 16px; }
@@ -475,9 +475,9 @@
   <div class="text-toolbar">
     <button class="btn-secondary" id="btnTraduction" onclick="basculerTraduction()">Traduction</button>
     <button class="btn-secondary" onclick="nouveauTexte()">Nouveau texte</button>
-  </div>
-  <div class="detail-bar" id="detailBar">
-    <button class="btn-detail" onclick="ouvrirDetail()">🔍 Détail</button>
+    <div class="detail-bar" id="detailBar">
+      <button class="btn-detail" onclick="ouvrirDetail()">🔍 Détail</button>
+    </div>
   </div>
   <div class="parallel-view" id="parallelView">
     <div class="parallel-col col-fr" id="parallelFr"></div>
