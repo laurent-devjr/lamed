@@ -792,7 +792,7 @@ function renderParallel(segments) {
   let heHtml = '';
   let frHtml = '';
   segments.forEach((seg, i) => {
-    if (seg.he === '\n' || seg.fr === '\n') {
+    if (seg.he === '\n' || seg.he === '' || seg.fr === '\n' || seg.fr === '') {
       heHtml += '<br>';
       frHtml += '<br>';
     } else {
