@@ -1,3 +1,32 @@
+function redistribuerCorrections(segments, correctedFr) {
+  const nonNl = segments
+    .map((s, i) => ({ ...s, origIdx: i }))
+    .filter(s => s.he !== '\n' && s.fr !== '\n');
+
+  const origTotalWords = nonNl.reduce(
+    (acc, s) => acc + s.fr.trim().split(/\s+/).filter(Boolean).length, 0
+  );
+  const corrWords = correctedFr.trim().split(/\s+/).filter(Boolean);
+
+  let corrPos = 0;
+  nonNl.forEach((seg, i) => {
+    const segWordCount = seg.fr.trim().split(/\s+/).filter(Boolean).length;
+    if (i === nonNl.length - 1) {
+      segments[seg.origIdx].fr = corrWords.slice(corrPos).join(' ') || seg.fr;
+    } else {
+      const ratio = segWordCount / origTotalWords;
+      const remaining = nonNl.length - 1 - i;
+      let count = Math.max(1, Math.round(ratio * corrWords.length));
+      count = Math.min(count, corrWords.length - corrPos - remaining);
+      count = Math.max(1, count);
+      segments[seg.origIdx].fr = corrWords.slice(corrPos, corrPos + count).join(' ');
+      corrPos += count;
+    }
+  });
+
+  return segments;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -7,11 +36,13 @@ export default async function handler(req, res) {
 
   if (type === 'traduction_complete') {
     try {
-      // Appel 1 : Sonnet produit une traduction libre, fluide, sans contrainte de format
-      const promptTraduction = `Tu es un traducteur expert en hébreu moderne israélien. Traduis le texte hébreu suivant en français. La traduction doit être complète, fidèle, fluide et de haute qualité littéraire — naturelle, agréable à lire, avec un bon niveau de langue. Retourne uniquement la traduction française, sans commentaire ni explication.
-
-Texte hébreu :
-${texte}`;
+      // Appel 1 : Sonnet traduit et segmente en une seule passe
+      const promptTraduction = `Tu es un traducteur expert en hébreu moderne israélien. Travaille en deux étapes :
+ÉTAPE 1 : Produis une traduction complète, fidèle et de haute qualité littéraire en français. La traduction doit être naturelle, fluide, avec un excellent niveau de langue, sans aucune faute de grammaire ni de syntaxe.
+ÉTAPE 2 : Découpe ta traduction en segments alignés avec l'hébreu original. Chaque segment = un mot ou groupe indissociable. Les segments français doivent être des extraits exacts de ta traduction. La ponctuation est attachée au segment qui la précède.
+Retourne UNIQUEMENT ce JSON sans commentaire ni backtick : {"segments":[{"he":"...","fr":"..."},...]}
+Sauts de ligne : {"he":"\\n","fr":"\\n"}.
+Texte hébreu : ${texte}`;
 
       const res1 = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -27,23 +58,17 @@ ${texte}`;
         })
       });
       const data1 = await res1.json();
-      const traductionFr = data1.content[0].text.trim();
+      const texteReponse1 = data1.content[0].text.replace(/```json|```/g, '').trim();
+      const segments = JSON.parse(texteReponse1).segments;
 
-      // Appel 2 : Haiku aligne mécaniquement la traduction avec le texte hébreu mot à mot
-      const promptSegments = `Tu reçois un texte hébreu et sa traduction française. Aligne-les segment par segment. Règles :
-- Chaque segment hébreu doit être le plus petit possible (idéalement un mot).
-- Le segment français correspondant doit être un extrait exact de la traduction fournie.
-- La ponctuation (virgules, points, tirets, guillemets...) doit être attachée au segment qui la précède dans le texte hébreu — ne l'omets jamais.
-- Les sauts de ligne deviennent {"he":"\\n","fr":"\\n"}.
+      // Reconstitue le texte français complet pour relecture
+      const texteFrancaisComplet = segments
+        .filter(s => s.he !== '\n' && s.fr !== '\n')
+        .map(s => s.fr)
+        .join(' ');
 
-Retourne UNIQUEMENT ce JSON valide, sans commentaire ni backtick :
-{"segments":[{"he":"...","fr":"..."},...]}
-
-Texte hébreu :
-${texte}
-
-Traduction française :
-${traductionFr}`;
+      // Appel 2 : Sonnet relit et corrige le français
+      const promptRelecture = `Tu es un correcteur littéraire expert en français. Relis cette traduction de l'hébreu et corrige toute faute de grammaire, de syntaxe ou de style maladroit. Retourne UNIQUEMENT le texte corrigé, sans commentaire, sans explication. Si le texte est parfait, retourne-le tel quel. Texte : ${texteFrancaisComplet}`;
 
       const res2 = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -53,15 +78,17 @@ ${traductionFr}`;
           'anthropic-version': '2023-06-01'
         },
         body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
+          model: 'claude-sonnet-4-20250514',
           max_tokens: 4000,
-          messages: [{ role: 'user', content: promptSegments }]
+          messages: [{ role: 'user', content: promptRelecture }]
         })
       });
       const data2 = await res2.json();
-      const texteReponse = data2.content[0].text.replace(/```json|```/g, '').trim();
-      const parsed = JSON.parse(texteReponse);
-      return res.status(200).json(parsed);
+      const texteFrCorrige = data2.content[0].text.trim();
+
+      // Redistribue les corrections dans les segments
+      const segmentsCorrigesJSON = redistribuerCorrections(segments, texteFrCorrige);
+      return res.status(200).json({ segments: segmentsCorrigesJSON });
 
     } catch (err) {
       return res.status(500).json({ error: err.message });
