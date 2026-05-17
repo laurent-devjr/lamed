@@ -331,7 +331,7 @@
       .parallel-col { font-size: 16px; }
       .parallel-col.col-he { border-left: none; border-bottom: none; border-top: none; margin-bottom: 0; order: -2; position: relative; }
       .parallel-col.col-he::after { content: none; display: none; }
-      .parallel-separator { display: block; width: 100%; height: 3px; background: linear-gradient(to right, transparent, #c8a96e, transparent); flex-shrink: 0; order: -1; }
+      .parallel-separator { display: flex; width: 100%; height: 28px; flex-shrink: 0; order: 0; }
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
@@ -345,7 +345,7 @@
   </div>
   <div class="nav-pills">
     <button class="pill active">Lire</button>
-    <button class="pill">Historique</button>
+    <button class="pill">Mes mots</button>
 </div>
 </div>
 
@@ -555,11 +555,10 @@ function intervertirColonnes() {
   const colHe = document.getElementById('parallelHe');
   const colFr = document.getElementById('parallelFr');
   const separator = document.querySelector('.parallel-separator');
-
   if (colonnesInverties) {
-    parallelView.insertBefore(colFr, separator);
+    parallelView.append(colHe, separator, colFr);
   } else {
-    parallelView.insertBefore(colHe, separator);
+    parallelView.append(colFr, separator, colHe);
   }
 }
 
