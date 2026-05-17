@@ -4,14 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lamed — Apprendre l'hébreu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f3;
-      min-height: 100vh;
-    }
+    body { font-family: 'Inter', Arial, sans-serif; background: #f5f3ff; min-height: 100vh; }
     html.mode-parallele,
     body.mode-parallele {
       overflow: hidden;
@@ -21,40 +20,15 @@
     }
 
     /* TOPBAR */
-    .topbar {
-      background: white;
-      border-bottom: 1px solid #e8e8e8;
-      padding: 12px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-    .logo { font-size: 16px; font-weight: 600; color: #2c2c2a; display: flex; align-items: center; gap: 8px; cursor: pointer; }
-    .logo-he { font-size: 18px; color: #888; }
-    .nav-pills { display: flex; gap: 4px; }
-    .pill {
-      font-size: 13px;
-      padding: 5px 12px;
-      border-radius: 6px;
-      color: #888;
-      cursor: pointer;
-      border: none;
-      background: transparent;
-    }
-    .pill.active { background: #f0f0ee; color: #2c2c2a; font-weight: 500; }
+    .topbar { background: #fafaf9; border-bottom: 0.5px solid #e4e2f0; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .logo { font-size: 15px; font-weight: 500; color: #1c1917; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .logo-badge { width: 28px; height: 28px; background: #6366f1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: white; font-weight: 700; flex-shrink: 0; }
+    .nav-pills { display: flex; gap: 2px; }
+    .pill { font-size: 12px; padding: 4px 10px; border-radius: 7px; color: #a8a29e; cursor: pointer; border: none; background: transparent; font-family: 'Inter', sans-serif; }
+    .pill.active { background: #ede9fe; color: #6366f1; font-weight: 500; }
 
     /* LAYOUT PRINCIPAL */
-    .layout {
-      display: flex;
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 28px 20px;
-      gap: 20px;
-      transition: all 0.3s ease;
-    }
+    .layout { display: flex; max-width: 1100px; margin: 0 auto; padding: 20px 16px; gap: 16px; }
 
     /* ZONE PRINCIPALE */
     .main {
@@ -64,66 +38,18 @@
     }
 
     /* CARTE SAISIE */
-    .input-card {
-      background: white;
-      border: 1px solid #e8e8e8;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 16px;
-    }
-    .input-label {
-      font-size: 11px;
-      color: #aaa;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 10px;
-    }
-    textarea {
-      width: 100%;
-      height: 110px;
-      font-size: 20px;
-      padding: 12px;
-      border: 1px solid #e8e8e8;
-      border-radius: 8px;
-      direction: rtl;
-      font-family: Arial, sans-serif;
-      resize: vertical;
-      background: #fafafa;
-      color: #2c2c2a;
-    }
-    textarea:focus { outline: none; border-color: #bbb; }
-    .btn-row { display: flex; justify-content: flex-end; margin-top: 12px; }
-    .btn-primary {
-      font-size: 13px;
-      padding: 8px 18px;
-      background: #2c2c2a;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 500;
-    }
-    .btn-primary:hover { background: #444; }
-    .btn-photo {
-      font-size: 13px;
-      padding: 8px 18px;
-      background: #f0f0ee;
-      color: #2c2c2a;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 500;
-    }
-    .btn-photo:hover { background: #e4e4e2; }
+    .input-card { background: white; border: 0.5px solid #e4e2f0; border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+    .input-label { font-size: 10px; color: #a8a29e; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; font-weight: 500; }
+    textarea { width: 100%; height: 100px; font-size: 18px; padding: 12px; border: 0.5px solid #e4e2f0; border-radius: 8px; direction: rtl; font-family: 'Inter', Arial, sans-serif; resize: vertical; background: #fafaf9; color: #1c1917; }
+    textarea:focus { outline: none; border-color: #6366f1; }
+    .btn-row { display: flex; justify-content: flex-end; margin-top: 12px; gap: 8px; }
+    .btn-primary { font-size: 12px; padding: 8px 16px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-family: 'Inter', sans-serif; }
+    .btn-primary:hover { background: #4f46e5; }
+    .btn-photo { font-size: 12px; padding: 8px 16px; background: white; color: #78716c; border: 0.5px solid #e4e2f0; border-radius: 8px; cursor: pointer; font-weight: 500; font-family: 'Inter', sans-serif; }
+    .btn-photo:hover { background: #fafaf9; }
 
     /* TEXTE CLIQUABLE */
-    .text-card {
-      background: white;
-      border: 1px solid #e8e8e8;
-      border-radius: 12px;
-      padding: 28px;
-      display: none;
-    }
+    .text-card { background: white; border: 0.5px solid #e4e2f0; border-radius: 14px; padding: 20px; display: none; }
     .text-card.visible { display: block; }
     .text-toolbar {
   display: flex;
@@ -131,17 +57,8 @@
   margin-bottom: 16px;
   flex-wrap: wrap;
 }
-.btn-secondary {
-  font-size: 13px;
-  padding: 7px 14px;
-  background: white;
-  color: #2c2c2a;
-  border: 1px solid #e8e8e8;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-}
-.btn-secondary:hover { background: #f5f5f3; }
+.btn-secondary { font-size: 12px; padding: 6px 12px; background: white; color: #78716c; border: 0.5px solid #e4e2f0; border-radius: 7px; cursor: pointer; font-weight: 500; font-family: 'Inter', sans-serif; }
+.btn-secondary:hover { background: #fafaf9; }
 .translation-text {
   font-size: 17px;
   line-height: 1.9;
@@ -227,13 +144,7 @@
       margin-bottom: 14px;
     }
     .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
-    .badge {
-      font-size: 11px;
-      padding: 3px 9px;
-      border-radius: 5px;
-      background: #eef4fb;
-      color: #185fa5;
-    }
+    .badge { font-size: 10px; padding: 2px 8px; border-radius: 5px; background: #ede9fe; color: #6366f1; }
     .divider { height: 1px; background: #f0f0ee; margin: 14px 0; }
     .panel-label {
       font-size: 11px;
@@ -265,21 +176,8 @@
       padding: 20px 0;
     }
 
-    .btn-conjugaison {
-      display: inline-block;
-      margin-top: 14px;
-      padding: 8px 14px;
-      background: #dcfce7;
-      color: #16a34a;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
-      border: 1px solid #86efac;
-      width: 100%;
-      text-align: center;
-    }
-    .btn-conjugaison:hover { background: #d8eaf8; }
+    .btn-conjugaison { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 14px; padding: 8px 14px; background: #f0fdf4; color: #16a34a; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; border: 0.5px solid #bbf7d0; width: 100%; }
+    .btn-conjugaison:hover { background: #dcfce7; }
 
     /* PANNEAU CONJUGAISONS */
     .conj-panel {
@@ -440,7 +338,7 @@
 
 <div class="topbar">
   <div class="logo" onclick="nouveauTexte()">
-    <span class="logo-he">לָמַד</span>
+    <div class="logo-badge">ל</div>
     <span>Lamed</span>
   </div>
   <div class="nav-pills">
@@ -620,7 +518,7 @@
         .map(b => `<span class="badge">${b}</span>`).join('');
 
       const btnConj = json.estVerbe && json.infinitif
-        ? `<button class="btn-conjugaison" onclick="afficherConjugaisons('${json.infinitif.replace(/'/g, "\\'")}')">📖 Conjugaisons →</button>`
+        ? `<button class="btn-conjugaison" onclick="afficherConjugaisons('${json.infinitif.replace(/'/g, "\\'")}')"><i class="ti ti-layout-grid"></i> Conjugaisons →</button>`
         : '';
 
       const niqqud = json.motAvecNiqqud
@@ -843,7 +741,7 @@ async function ouvrirDetail() {
     const json = JSON.parse(texteReponse);
     document.getElementById('panel-traduction').textContent = json.traduction;
     document.getElementById('panel-badges').innerHTML = json.badges.map(b => '<span class="badge">' + b + '</span>').join('');
-    const btnConj = json.estVerbe && json.infinitif ? '<button class="btn-conjugaison" onclick="afficherConjugaisons(\'' + json.infinitif.replace(/'/g, "\\'") + '\')">📖 Conjugaisons →</button>' : '';
+    const btnConj = json.estVerbe && json.infinitif ? '<button class="btn-conjugaison" onclick="afficherConjugaisons(\'' + json.infinitif.replace(/'/g, "\\'") + '\')"><i class="ti ti-layout-grid"></i> Conjugaisons →</button>' : '';
     const niqqud = json.motAvecNiqqud ? '<div class="panel-niqqud">' + json.motAvecNiqqud + '</div><div class="divider"></div>' : '';
     document.getElementById('panel-contenu').innerHTML = niqqud + '<div class="panel-label">Racine</div><div class="panel-val">' + json.racine + '</div><div class="panel-label">Analyse</div><div class="panel-val">' + json.analyse + '</div>' + btnConj;
   } catch (err) {
