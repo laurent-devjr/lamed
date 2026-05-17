@@ -329,7 +329,7 @@
     @media (max-width: 700px) {
       .parallel-view.visible { flex-direction: column; }
       .parallel-col { font-size: 16px; }
-      .parallel-col.col-he { border-left: none; border-bottom: none; border-top: none; margin-bottom: 0; order: -2; position: relative; }
+      .parallel-col.col-he { border-left: none; border-bottom: none; border-top: none; margin-bottom: 0; position: relative; }
       .parallel-col.col-he::after { content: none; display: none; }
       .parallel-separator { display: flex; width: 100%; height: 28px; flex-shrink: 0; order: 0; }
     }
@@ -380,13 +380,13 @@
     </div>
   </div>
   <div class="parallel-view" id="parallelView">
-    <div class="parallel-col col-fr" id="parallelFr"></div>
+    <div class="parallel-col col-he" id="parallelHe"></div>
     <div class="parallel-separator">
       <div class="parallel-separator-badge" onclick="intervertirColonnes()" title="Intervertir">
         <i class="ti ti-arrows-up-down" style="font-size:11px;"></i>
       </div>
     </div>
-    <div class="parallel-col col-he" id="parallelHe"></div>
+    <div class="parallel-col col-fr" id="parallelFr"></div>
   </div>
   <div class="he-text" id="output"></div>
   <div class="translation-text" id="translationText"></div>
@@ -556,9 +556,9 @@ function intervertirColonnes() {
   const colFr = document.getElementById('parallelFr');
   const separator = document.querySelector('.parallel-separator');
   if (colonnesInverties) {
-    parallelView.append(colHe, separator, colFr);
-  } else {
     parallelView.append(colFr, separator, colHe);
+  } else {
+    parallelView.append(colHe, separator, colFr);
   }
 }
 
