@@ -312,10 +312,12 @@
 }
     .parallel-view { display: none; }
     .parallel-view.visible { display: flex; flex-direction: row; position: fixed; top: 57px; left: 0; right: 0; bottom: 0; z-index: 5; background: white; }
-    .parallel-col { flex: 1; padding: 16px; min-width: 0; font-size: 18px; line-height: 1.8; overflow-y: auto; }
-    .parallel-col.col-he { border-left: 1px solid #e8e8e8; direction: rtl; text-align: right; }
-    .parallel-separator { display: none; }
-    .parallel-col.col-fr { direction: ltr; color: #444; }
+    .parallel-separator { display: flex; align-items: center; justify-content: center; position: relative; flex-shrink: 0; height: 28px; }
+    .parallel-separator::before { content: ''; position: absolute; left: 20px; right: 20px; height: 1px; background: linear-gradient(to right, transparent, #c4b5fd 30%, #c4b5fd 70%, transparent); }
+    .parallel-separator-badge { background: white; border: 1px solid #c4b5fd; border-radius: 20px; padding: 3px 10px; font-size: 9px; color: #7c3aed; font-weight: 600; z-index: 1; position: relative; cursor: pointer; display: flex; align-items: center; gap: 4px; user-select: none; transition: background 0.15s; }
+    .parallel-separator-badge:hover { background: #f5f3ff; }
+    .parallel-col.col-he { flex: 1; padding: 12px 16px; min-width: 0; font-size: 18px; line-height: 1.9; overflow-y: auto; direction: rtl; text-align: right; background: white; }
+    .parallel-col.col-fr { flex: 1; padding: 12px 16px; min-width: 0; font-size: 18px; line-height: 1.9; overflow-y: auto; direction: ltr; color: #44403c; background: #faf9ff; }
     .seg { cursor: pointer; border-radius: 3px; padding: 1px 3px; transition: background 0.15s; display: inline; }
     .seg:hover { background: #f0f0ee; }
     .seg.hl-primary { background: #faeeda; outline: 1px solid #ba7517; }
@@ -379,7 +381,11 @@
   </div>
   <div class="parallel-view" id="parallelView">
     <div class="parallel-col col-fr" id="parallelFr"></div>
-    <div class="parallel-separator"></div>
+    <div class="parallel-separator">
+      <div class="parallel-separator-badge" onclick="intervertirColonnes()" title="Intervertir">
+        <i class="ti ti-arrows-up-down" style="font-size:11px;"></i>
+      </div>
+    </div>
     <div class="parallel-col col-he" id="parallelHe"></div>
   </div>
   <div class="he-text" id="output"></div>
@@ -541,6 +547,21 @@
   }
 let traductionChargee = false;
 let modeTraduction = false;
+let colonnesInverties = false;
+
+function intervertirColonnes() {
+  colonnesInverties = !colonnesInverties;
+  const parallelView = document.getElementById('parallelView');
+  const colHe = document.getElementById('parallelHe');
+  const colFr = document.getElementById('parallelFr');
+  const separator = document.querySelector('.parallel-separator');
+
+  if (colonnesInverties) {
+    parallelView.insertBefore(colFr, separator);
+  } else {
+    parallelView.insertBefore(colHe, separator);
+  }
+}
 
 async function basculerTraduction() {
   const btn = document.getElementById('btnTraduction');
@@ -623,6 +644,7 @@ function nouveauTexte() {
   document.getElementById('parallelView').style.top = '';
   document.getElementById('parallelView').style.left = '';
   document.getElementById('parallelView').style.right = '';
+  colonnesInverties = false;
   fermerPanel();
 }
   function fermerPanel() {
