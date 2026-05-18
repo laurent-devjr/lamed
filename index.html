@@ -338,6 +338,13 @@
       .parallel-col.col-he::after { content: none; display: none; }
       .parallel-separator { display: flex; width: 100%; height: 28px; flex-shrink: 0; order: 0; }
     }
+    .popup-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 500; align-items: center; justify-content: center; padding: 20px; }
+    .popup-overlay.visible { display: flex; }
+    .popup-card { background: white; border-radius: 16px; padding: 24px; max-width: 320px; width: 100%; }
+    .popup-title { font-size: 15px; font-weight: 600; color: #1c1917; margin-bottom: 10px; }
+    .popup-msg { font-size: 13px; color: #57534e; line-height: 1.6; margin-bottom: 20px; }
+    .popup-btn { width: 100%; padding: 10px; background: #6366f1; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: 'Inter', sans-serif; }
+    .popup-btn:hover { background: #4f46e5; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 </head>
@@ -562,13 +569,13 @@ let portionActive = 0;
 
 function decoupeTexte(texte) {
   const mots = texte.trim().split(/\s+/);
-  if (mots.length <= 400) return [texte];
+  if (mots.length <= 200) return [texte];
   const result = [];
   let debut = 0;
   while (debut < mots.length) {
-    let fin = Math.min(debut + 400, mots.length);
+    let fin = Math.min(debut + 200, mots.length);
     if (fin < mots.length) {
-      for (let i = fin; i > debut + 280; i--) {
+      for (let i = fin; i > debut + 160; i--) {
         if (mots[i-1] && mots[i-1].endsWith('.')) { fin = i; break; }
       }
     }
@@ -654,10 +661,11 @@ async function basculerTraduction() {
     document.documentElement.classList.add('mode-parallele');
 
     const mots = texteHebreu.trim().split(/\s+/);
-    if (mots.length > 400) {
+    if (mots.length > 200) {
       portions = decoupeTexte(texteHebreu);
       portionActive = 0;
       afficherBoutonsPortion();
+      afficherPopup('Ce texte a été découpé en ' + portions.length + ' parties de 200 mots maximum. Utilise les boutons Partie 1, 2... pour naviguer.');
       await lancerTraduction(portions[0]);
     } else {
       portions = [texteHebreu];
@@ -834,7 +842,23 @@ async function ouvrirDetail() {
   }
 }
 
+function afficherPopup(msg) {
+  document.getElementById('popupMsg').textContent = msg;
+  document.getElementById('popupOverlay').classList.add('visible');
+}
+function fermerPopup() {
+  document.getElementById('popupOverlay').classList.remove('visible');
+}
+
 </script>
+
+<div class="popup-overlay" id="popupOverlay">
+  <div class="popup-card">
+    <div class="popup-title">Texte trop long</div>
+    <div class="popup-msg" id="popupMsg"></div>
+    <button class="popup-btn" onclick="fermerPopup()">OK</button>
+  </div>
+</div>
 
 </body>
 </html>
