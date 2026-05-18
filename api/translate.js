@@ -34,13 +34,26 @@ export default async function handler(req, res) {
         },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 4000,
+          max_tokens: 8000,
           messages: [{ role: 'user', content: 'Tu reçois un texte hébreu original et sa traduction française de qualité. Crée des segments alignés entre les deux textes. Chaque segment = un mot ou groupe indissociable. Les segments français doivent être des extraits exacts de la traduction fournie. IMPORTANT : préserve EXACTEMENT tous les sauts de ligne et paragraphes du texte hébreu original. Chaque saut de ligne simple devient {"he":"\\n","fr":"\\n"}, chaque ligne vide (saut de paragraphe) devient deux objets {"he":"\\n","fr":"\\n"} consécutifs. Retourne UNIQUEMENT ce JSON sans commentaire ni backtick : {"segments":[{"he":"...","fr":"..."},...]}\\nTexte hébreu : ' + texte + '\\nTraduction française : ' + texteFrancais }]
         })
       });
       const data2 = await res2.json();
-      const texteReponse = data2.content[0].text.replace(/```json|```/g, '').trim();
-      const parsed = JSON.parse(texteReponse);
+      const rawText2 = data2.content[0].text;
+      const jsonStart = rawText2.indexOf('{');
+      const jsonEnd = rawText2.lastIndexOf('}');
+      if (jsonStart === -1 || jsonEnd === -1) {
+        console.error('Pas de JSON trouvé dans:', rawText2.substring(0, 300));
+        return res.status(500).json({ error: 'Pas de JSON dans la réponse' });
+      }
+      const cleanedText = rawText2.slice(jsonStart, jsonEnd + 1);
+      let parsed;
+      try {
+        parsed = JSON.parse(cleanedText);
+      } catch (parseErr) {
+        console.error('JSON invalide:', parseErr.message, '| Texte:', cleanedText.substring(0, 300));
+        return res.status(500).json({ error: 'JSON invalide: ' + parseErr.message });
+      }
       return res.status(200).json(parsed);
 
     } catch (err) {
