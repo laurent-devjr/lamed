@@ -569,13 +569,13 @@ let portionActive = 0;
 
 function decoupeTexte(texte) {
   const mots = texte.trim().split(/\s+/);
-  if (mots.length <= 200) return [texte];
+  if (mots.length <= 150) return [texte];
   const result = [];
   let debut = 0;
   while (debut < mots.length) {
-    let fin = Math.min(debut + 200, mots.length);
+    let fin = Math.min(debut + 150, mots.length);
     if (fin < mots.length) {
-      for (let i = fin; i > debut + 160; i--) {
+      for (let i = fin; i > debut + 120; i--) {
         if (mots[i-1] && mots[i-1].endsWith('.')) { fin = i; break; }
       }
     }
@@ -661,7 +661,7 @@ async function basculerTraduction() {
     document.documentElement.classList.add('mode-parallele');
 
     const mots = texteHebreu.trim().split(/\s+/);
-    if (mots.length > 200) {
+    if (mots.length > 150) {
       portions = decoupeTexte(texteHebreu);
       portionActive = 0;
       afficherBoutonsPortion();

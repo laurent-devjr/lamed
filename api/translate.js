@@ -33,9 +33,9 @@ export default async function handler(req, res) {
           'anthropic-version': '2023-06-01'
         },
         body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
+          model: 'claude-sonnet-4-20250514',
           max_tokens: 8000,
-          messages: [{ role: 'user', content: 'Tu reçois un texte hébreu original et sa traduction française de qualité. Crée des segments alignés entre les deux textes. Chaque segment = un mot ou groupe indissociable. Les segments français doivent être des extraits exacts de la traduction fournie. IMPORTANT : préserve EXACTEMENT tous les sauts de ligne et paragraphes du texte hébreu original. Chaque saut de ligne simple devient {"he":"\\n","fr":"\\n"}, chaque ligne vide (saut de paragraphe) devient deux objets {"he":"\\n","fr":"\\n"} consécutifs. Retourne UNIQUEMENT ce JSON sans commentaire ni backtick : {"segments":[{"he":"...","fr":"..."},...]}\\nTexte hébreu : ' + texte + '\\nTraduction française : ' + texteFrancais }]
+          messages: [{ role: 'user', content: 'Tu reçois un texte hébreu original et sa traduction française de qualité. Crée des segments alignés entre les deux textes. Chaque segment doit être UN SEUL MOT, pas plus. La seule exception autorisée : un groupe de 2-3 mots strictement indissociables comme un nom propre (Tel Aviv), une expression figée, ou un mot hébreu qui nécessite plusieurs mots français pour être traduit (ou vice-versa). Dans tous les autres cas : UN mot = UN segment. Les segments français doivent être des extraits exacts de la traduction fournie. IMPORTANT : préserve EXACTEMENT tous les sauts de ligne et paragraphes du texte hébreu original. Chaque saut de ligne simple devient {"he":"\\n","fr":"\\n"}, chaque ligne vide (saut de paragraphe) devient deux objets {"he":"\\n","fr":"\\n"} consécutifs. Retourne UNIQUEMENT ce JSON sans commentaire ni backtick : {"segments":[{"he":"...","fr":"..."},...]}\\nTexte hébreu : ' + texte + '\\nTraduction française : ' + texteFrancais }]
         })
       });
       const data2 = await res2.json();
