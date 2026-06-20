@@ -7,7 +7,6 @@ export default async function handler(req, res) {
 
   if (type === 'traduction_complete') {
     try {
-      // Appel 1 : Sonnet produit une traduction de haute qualité
       const res1 = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -17,36 +16,32 @@ export default async function handler(req, res) {
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
-          max_tokens: 4000,
-          messages: [{ role: 'user', content: 'Tu es un traducteur et correcteur expert en hébreu moderne israélien et en français littéraire. Traduis ce texte hébreu en français. Exigences absolues : traduction fidèle au sens original, français parfait sans aucune faute de grammaire ou de syntaxe, style naturel et fluide, excellent niveau de langue. Retourne UNIQUEMENT le texte traduit, sans commentaire ni explication. Texte hébreu : ' + texte }]
+          max_tokens: 8000,
+          messages: [{ role: 'user', content: `Tu es un traducteur expert en hébreu moderne israélien et en français littéraire. Traduis le texte hébreu ci-dessous en français de qualité littéraire (fidèle au sens, français parfait, style naturel et fluide), puis retourne IMMÉDIATEMENT les segments alignés mot-à-mot entre ta traduction et le texte hébreu.
+
+Puisque tu produis toi-même la traduction, tu connais exactement les correspondances — exploite cela pour un alignement précis.
+
+Règles d'alignement :
+- Chaque segment = 1 mot si possible (hébreu et français).
+- Exception uniquement si indissociable : nom propre (Tel Aviv), expression figée, ou mot hébreu nécessitant plusieurs mots français (ou vice-versa).
+- Préserve EXACTEMENT tous les sauts de ligne du texte hébreu original : chaque saut de ligne devient {"he":"\\n","fr":"\\n"}.
+
+Retourne UNIQUEMENT ce JSON sans commentaire ni backtick :
+{"segments":[{"he":"...","fr":"..."},...]}
+
+Texte hébreu :
+` + texte }]
         })
       });
       const data1 = await res1.json();
-      const texteFrancais = data1.content[0].text.trim();
-
-      // Appel 2 : Sonnet segmente et aligne la traduction avec le texte hébreu
-      const res2 = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': process.env.ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01'
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 8000,
-          messages: [{ role: 'user', content: 'Tu reçois un texte hébreu original et sa traduction française de qualité. Crée des segments alignés entre les deux textes. Chaque segment doit être UN SEUL MOT, pas plus. La seule exception autorisée : un groupe de 2-3 mots strictement indissociables comme un nom propre (Tel Aviv), une expression figée, ou un mot hébreu qui nécessite plusieurs mots français pour être traduit (ou vice-versa). Dans tous les autres cas : UN mot = UN segment. Les segments français doivent être des extraits exacts de la traduction fournie. IMPORTANT : préserve EXACTEMENT tous les sauts de ligne et paragraphes du texte hébreu original. Chaque saut de ligne simple devient {"he":"\\n","fr":"\\n"}, chaque ligne vide (saut de paragraphe) devient deux objets {"he":"\\n","fr":"\\n"} consécutifs. Retourne UNIQUEMENT ce JSON sans commentaire ni backtick : {"segments":[{"he":"...","fr":"..."},...]}\\nTexte hébreu : ' + texte + '\\nTraduction française : ' + texteFrancais }]
-        })
-      });
-      const data2 = await res2.json();
-      const rawText2 = data2.content[0].text;
-      const jsonStart = rawText2.indexOf('{');
-      const jsonEnd = rawText2.lastIndexOf('}');
+      const rawText = data1.content[0].text;
+      const jsonStart = rawText.indexOf('{');
+      const jsonEnd = rawText.lastIndexOf('}');
       if (jsonStart === -1 || jsonEnd === -1) {
-        console.error('Pas de JSON trouvé dans:', rawText2.substring(0, 300));
+        console.error('Pas de JSON trouvé dans:', rawText.substring(0, 300));
         return res.status(500).json({ error: 'Pas de JSON dans la réponse' });
       }
-      const cleanedText = rawText2.slice(jsonStart, jsonEnd + 1);
+      const cleanedText = rawText.slice(jsonStart, jsonEnd + 1);
       let parsed;
       try {
         parsed = JSON.parse(cleanedText);
