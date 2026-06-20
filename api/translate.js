@@ -34,6 +34,7 @@ Texte hébreu :
         })
       });
       const data1 = await res1.json();
+      console.log(JSON.stringify(data1));
       const rawText = data1.content[0].text;
       const jsonStart = rawText.indexOf('{');
       const jsonEnd = rawText.lastIndexOf('}');
