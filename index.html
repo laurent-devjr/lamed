@@ -623,6 +623,8 @@ async function lancerTraduction(texte) {
       body: JSON.stringify({ texte, type: 'traduction_complete' })
     });
     const data = await response.json();
+    console.log(data);
+    if (data.error) throw new Error(data.error);
     segmentsData = data.segments;
     if (!segmentsData || !Array.isArray(segmentsData)) throw new Error('Format de réponse invalide');
     renderParallel(segmentsData);
