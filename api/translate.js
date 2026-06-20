@@ -15,7 +15,7 @@ export default async function handler(req, res) {
           'anthropic-version': '2023-06-01'
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 8000,
           messages: [{ role: 'user', content: `Tu es un traducteur expert en hébreu moderne israélien et en français littéraire. Traduis le texte hébreu ci-dessous en français de qualité littéraire (fidèle au sens, français parfait, style naturel et fluide), puis retourne IMMÉDIATEMENT les segments alignés mot-à-mot entre ta traduction et le texte hébreu.
 
