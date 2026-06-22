@@ -145,11 +145,16 @@
     }
     .btn-speaker { background: none; border: none; cursor: pointer; font-size: 20px; padding: 4px 6px; border-radius: 6px; color: #6366f1; flex-shrink: 0; line-height: 1; }
     .btn-speaker:hover { background: #ede9fe; }
+    .panel-fr-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+    .panel-fr-row .panel-fr { margin-bottom: 0; }
+    .btn-star { background: none; border: none; cursor: pointer; font-size: 20px; color: #c4bfb8; padding: 2px 4px; border-radius: 6px; flex-shrink: 0; line-height: 1; transition: color 0.15s; }
+    .btn-star:hover { color: #f59e0b; background: #fef3c7; }
+    .btn-star.active { color: #f59e0b; }
     .panel-fr {
       font-size: 17px;
       color: #185fa5;
       font-weight: 500;
-      margin-bottom: 14px;
+      flex: 1;
     }
     .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
     .badge { font-size: 10px; padding: 2px 8px; border-radius: 5px; background: #ede9fe; color: #6366f1; }
@@ -465,7 +470,10 @@
         <div class="panel-he" id="panel-mot"></div>
         <button class="btn-speaker" onclick="prononcerMot()" title="Écouter la prononciation">🔊</button>
       </div>
-      <div class="panel-fr" id="panel-traduction"></div>
+      <div class="panel-fr-row">
+        <div class="panel-fr" id="panel-traduction"></div>
+        <button class="btn-star" id="btnStar" onclick="basculerFavori()" title="Ajouter aux favoris" style="display:none">☆</button>
+      </div>
       <div class="badges" id="panel-badges"></div>
       <div class="divider"></div>
       <div id="panel-contenu"></div>
@@ -485,6 +493,8 @@
   let motActif = null;
   let segmentsData = null;
   let motDetailCourant = null;
+  let favoriId = null;
+  let detailCourant = null;
 
   async function ocrPhoto(input) {
     const file = input.files[0];
@@ -569,6 +579,8 @@
     document.getElementById('panel-traduction').textContent = '';
     document.getElementById('panel-badges').innerHTML = '';
     document.getElementById('panel-contenu').innerHTML = '<div class="panel-loading">Analyse en cours...</div>';
+    document.getElementById('btnStar').style.display = 'none';
+    favoriId = null;
     document.getElementById('sidePanel').classList.add('open');
 
     const texteComplet = document.getElementById('output').innerText;
@@ -585,7 +597,6 @@
       const json = JSON.parse(texteReponse);
 
       document.getElementById('panel-traduction').textContent = json.traduction;
-
       document.getElementById('panel-badges').innerHTML = json.badges
         .map(b => `<span class="badge">${b}</span>`).join('');
 
@@ -605,6 +616,11 @@
         <div class="panel-val">${json.analyse}</div>
         ${btnConj}
       `;
+
+      document.getElementById('btnStar').style.display = '';
+      detailCourant = { mot, traduction: json.traduction, racine: json.racine };
+      _chargerFavori(mot);
+      _ajouterHistorique(mot, json.traduction);
 
     } catch (err) {
       document.getElementById('panel-contenu').innerHTML =
@@ -873,6 +889,8 @@ async function ouvrirDetail() {
   document.getElementById('panel-traduction').textContent = '';
   document.getElementById('panel-badges').innerHTML = '';
   document.getElementById('panel-contenu').innerHTML = '<div class="panel-loading">Analyse en cours...</div>';
+  document.getElementById('btnStar').style.display = 'none';
+  favoriId = null;
   document.getElementById('sidePanel').classList.add('open');
   const texteComplet = document.getElementById('parallelHe').innerText;
   try {
@@ -889,6 +907,11 @@ async function ouvrirDetail() {
     const btnConj = json.estVerbe && json.infinitif ? '<button class="btn-conjugaison" onclick="afficherConjugaisons(\'' + json.infinitif.replace(/'/g, "\\'") + '\')"><i class="ti ti-layout-grid"></i> Conjugaisons →</button>' : '';
     const niqqud = json.motAvecNiqqud ? '<div class="panel-niqqud">' + json.motAvecNiqqud + '</div><div class="divider"></div>' : '';
     document.getElementById('panel-contenu').innerHTML = niqqud + '<div class="panel-label">Racine</div><div class="panel-val">' + json.racine + '</div><div class="panel-label">Analyse</div><div class="panel-val">' + json.analyse + '</div>' + btnConj;
+
+    document.getElementById('btnStar').style.display = '';
+    detailCourant = { mot: motDetailCourant, traduction: json.traduction, racine: json.racine };
+    _chargerFavori(motDetailCourant);
+    _ajouterHistorique(motDetailCourant, json.traduction);
   } catch (err) {
     document.getElementById('panel-contenu').innerHTML = '<div class="panel-loading">❌ Erreur : ' + err.message + '</div>';
   }
@@ -909,6 +932,53 @@ function prononcerMot() {
   utt.lang = 'he-IL';
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(utt);
+}
+
+// ── FAVORIS & HISTORIQUE ──────────────────────────────────────────────────────
+
+async function _chargerFavori(mot) {
+  favoriId = null;
+  _syncEtoile();
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  if (!user) return;
+  const { data } = await supabaseClient.from('favoris')
+    .select('id')
+    .eq('mot_hebreu', mot)
+    .eq('user_id', user.id)
+    .maybeSingle();
+  favoriId = data?.id ?? null;
+  _syncEtoile();
+}
+
+function _syncEtoile() {
+  const btn = document.getElementById('btnStar');
+  if (!btn) return;
+  btn.textContent = favoriId ? '★' : '☆';
+  btn.classList.toggle('active', !!favoriId);
+  btn.title = favoriId ? 'Retirer des favoris' : 'Ajouter aux favoris';
+}
+
+async function basculerFavori() {
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  if (!user) { ouvrirModalAuth(); return; }
+  if (!detailCourant) return;
+  if (favoriId) {
+    await supabaseClient.from('favoris').delete().eq('id', favoriId);
+    favoriId = null;
+  } else {
+    const { data } = await supabaseClient.from('favoris')
+      .insert({ mot_hebreu: detailCourant.mot, traduction: detailCourant.traduction, racine: detailCourant.racine, user_id: user.id })
+      .select('id')
+      .single();
+    favoriId = data?.id ?? null;
+  }
+  _syncEtoile();
+}
+
+async function _ajouterHistorique(mot, traduction) {
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  if (!user) return;
+  await supabaseClient.from('historique').insert({ mot_hebreu: mot, traduction, user_id: user.id });
 }
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
