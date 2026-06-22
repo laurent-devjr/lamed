@@ -134,14 +134,17 @@
 }
 .panel-close:hover { background: #444; }
 
+    .panel-he-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
     .panel-he {
       font-size: 30px;
       direction: rtl;
       text-align: right;
       color: #2c2c2a;
       font-weight: 600;
-      margin-bottom: 4px;
+      flex: 1;
     }
+    .btn-speaker { background: none; border: none; cursor: pointer; font-size: 20px; padding: 4px 6px; border-radius: 6px; color: #6366f1; flex-shrink: 0; line-height: 1; }
+    .btn-speaker:hover { background: #ede9fe; }
     .panel-fr {
       font-size: 17px;
       color: #185fa5;
@@ -414,7 +417,10 @@
   <div class="side-panel" id="sidePanel">
     <div class="panel-card">
       <button class="panel-close" onclick="fermerPanel()">✕</button>
-      <div class="panel-he" id="panel-mot"></div>
+      <div class="panel-he-row">
+        <div class="panel-he" id="panel-mot"></div>
+        <button class="btn-speaker" onclick="prononcerMot()" title="Écouter la prononciation">🔊</button>
+      </div>
       <div class="panel-fr" id="panel-traduction"></div>
       <div class="badges" id="panel-badges"></div>
       <div class="divider"></div>
@@ -850,6 +856,15 @@ function afficherPopup(msg) {
 }
 function fermerPopup() {
   document.getElementById('popupOverlay').classList.remove('visible');
+}
+
+function prononcerMot() {
+  const mot = document.getElementById('panel-mot').textContent.trim();
+  if (!mot || !window.speechSynthesis) return;
+  const utt = new SpeechSynthesisUtterance(mot);
+  utt.lang = 'he-IL';
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utt);
 }
 
 </script>
