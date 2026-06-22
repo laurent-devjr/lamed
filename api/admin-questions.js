@@ -1,5 +1,5 @@
 const MODEL_SONNET = 'claude-sonnet-4-6';
-const MODEL_HAIKU = MODEL_HAIKU;
+const MODEL_HAIKU = 'claude-haiku-4-5-20251001';
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
