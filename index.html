@@ -348,6 +348,36 @@
     .popup-msg { font-size: 13px; color: #57534e; line-height: 1.6; margin-bottom: 20px; }
     .popup-btn { width: 100%; padding: 10px; background: #6366f1; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: 'Inter', sans-serif; }
     .popup-btn:hover { background: #4f46e5; }
+
+    /* AUTH HEADER */
+    .auth-zone { display: flex; align-items: center; }
+    .btn-auth { font-size: 12px; padding: 5px 12px; border-radius: 7px; border: 1px solid #6366f1; color: #6366f1; background: transparent; cursor: pointer; font-family: 'Inter', sans-serif; font-weight: 500; }
+    .btn-auth:hover { background: #ede9fe; }
+    .user-chip { display: flex; align-items: center; gap: 8px; }
+    .user-email { font-size: 12px; color: #57534e; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .btn-logout { font-size: 11px; padding: 3px 8px; border-radius: 5px; border: 1px solid #e4e2f0; color: #78716c; background: transparent; cursor: pointer; font-family: 'Inter', sans-serif; }
+    .btn-logout:hover { background: #f5f3ff; color: #6366f1; border-color: #6366f1; }
+
+    /* AUTH MODAL */
+    .auth-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+    .auth-modal-overlay.visible { display: flex; }
+    .auth-modal-card { background: white; border-radius: 16px; padding: 28px 24px 24px; width: 100%; max-width: 360px; position: relative; }
+    .auth-modal-card .panel-close { position: absolute; top: 14px; right: 14px; }
+    .auth-title { font-size: 18px; font-weight: 600; color: #1c1917; margin-bottom: 4px; }
+    .auth-subtitle { font-size: 13px; color: #78716c; margin-bottom: 20px; line-height: 1.5; }
+    .auth-field { margin-bottom: 14px; }
+    .auth-field label { display: block; font-size: 12px; font-weight: 500; color: #57534e; margin-bottom: 5px; }
+    .auth-field input { width: 100%; padding: 9px 12px; border: 1px solid #e4e2f0; border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; outline: none; color: #1c1917; }
+    .auth-field input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px #ede9fe; }
+    .auth-msg { font-size: 12px; min-height: 18px; margin-bottom: 12px; }
+    .auth-msg.error { color: #dc2626; }
+    .auth-msg.success { color: #16a34a; }
+    .auth-submit { width: 100%; padding: 10px; background: #6366f1; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: 'Inter', sans-serif; margin-bottom: 16px; }
+    .auth-submit:hover { background: #4f46e5; }
+    .auth-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+    .auth-toggle { font-size: 12px; color: #78716c; text-align: center; }
+    .auth-toggle a { color: #6366f1; text-decoration: none; font-weight: 500; }
+    .auth-toggle a:hover { text-decoration: underline; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -368,7 +398,14 @@
   <div class="nav-pills">
     <button class="pill active">Lire</button>
     <button class="pill">Mes mots</button>
-</div>
+  </div>
+  <div class="auth-zone" id="authZone">
+    <button class="btn-auth" id="btnConnexion" onclick="ouvrirModalAuth()">Se connecter</button>
+    <div class="user-chip" id="userChip" style="display:none">
+      <span class="user-email" id="userEmail"></span>
+      <button class="btn-logout" onclick="seDeconnecter()">Déconnexion</button>
+    </div>
+  </div>
 </div>
 
 <div class="layout" id="layout">
@@ -874,7 +911,134 @@ function prononcerMot() {
   window.speechSynthesis.speak(utt);
 }
 
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+
+let authMode = 'login';
+
+function ouvrirModalAuth() {
+  authMode = 'login';
+  _syncModale();
+  document.getElementById('authEmail').value = '';
+  document.getElementById('authPassword').value = '';
+  document.getElementById('authMsg').textContent = '';
+  document.getElementById('authMsg').className = 'auth-msg';
+  document.getElementById('authModalOverlay').classList.add('visible');
+  setTimeout(() => document.getElementById('authEmail').focus(), 50);
+}
+
+function fermerModalAuth() {
+  document.getElementById('authModalOverlay').classList.remove('visible');
+}
+
+function basculerModeAuth() {
+  authMode = authMode === 'login' ? 'signup' : 'login';
+  _syncModale();
+  document.getElementById('authMsg').textContent = '';
+  document.getElementById('authMsg').className = 'auth-msg';
+}
+
+function _syncModale() {
+  const login = authMode === 'login';
+  document.getElementById('authTitle').textContent = login ? 'Se connecter' : 'Créer un compte';
+  document.getElementById('authSubtitle').textContent = login
+    ? 'Accédez à vos favoris et votre historique.'
+    : 'Créez votre compte pour sauvegarder vos mots.';
+  document.getElementById('authSubmitBtn').textContent = login ? 'Se connecter' : 'Créer mon compte';
+  document.getElementById('authToggle').innerHTML = login
+    ? 'Pas encore de compte ? <a href="#" onclick="basculerModeAuth();return false;">Créer un compte</a>'
+    : 'Déjà un compte ? <a href="#" onclick="basculerModeAuth();return false;">Se connecter</a>';
+}
+
+async function soumettreAuth() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const msgEl = document.getElementById('authMsg');
+  const btn = document.getElementById('authSubmitBtn');
+
+  if (!email || !password) {
+    msgEl.className = 'auth-msg error';
+    msgEl.textContent = 'Email et mot de passe requis.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '…';
+  msgEl.textContent = '';
+
+  const isSignup = authMode === 'signup';
+  const { error } = isSignup
+    ? await supabaseClient.auth.signUp({ email, password })
+    : await supabaseClient.auth.signInWithPassword({ email, password });
+
+  btn.disabled = false;
+  _syncModale();
+
+  if (error) {
+    msgEl.className = 'auth-msg error';
+    msgEl.textContent = _traduireErreurAuth(error.message);
+    return;
+  }
+
+  if (isSignup) {
+    msgEl.className = 'auth-msg success';
+    msgEl.textContent = 'Compte créé ! Vérifiez votre email pour confirmer.';
+    return;
+  }
+
+  fermerModalAuth();
+}
+
+function _traduireErreurAuth(msg) {
+  if (msg.includes('Invalid login credentials')) return 'Email ou mot de passe incorrect.';
+  if (msg.includes('Email not confirmed')) return 'Confirmez votre email avant de vous connecter.';
+  if (msg.includes('User already registered')) return 'Un compte existe déjà avec cet email.';
+  if (msg.includes('Password should be at least')) return 'Le mot de passe doit faire au moins 6 caractères.';
+  return msg;
+}
+
+async function seDeconnecter() {
+  await supabaseClient.auth.signOut();
+}
+
+function _mettreAJourHeaderAuth(user) {
+  const btnConnexion = document.getElementById('btnConnexion');
+  const userChip = document.getElementById('userChip');
+  if (user) {
+    btnConnexion.style.display = 'none';
+    userChip.style.display = 'flex';
+    document.getElementById('userEmail').textContent = user.email;
+  } else {
+    btnConnexion.style.display = '';
+    userChip.style.display = 'none';
+  }
+}
+
+supabaseClient.auth.onAuthStateChange((_event, session) => {
+  _mettreAJourHeaderAuth(session?.user ?? null);
+});
+
 </script>
+
+<div class="auth-modal-overlay" id="authModalOverlay" onclick="if(event.target===this)fermerModalAuth()">
+  <div class="auth-modal-card">
+    <button class="panel-close" onclick="fermerModalAuth()">✕</button>
+    <div class="auth-title" id="authTitle">Se connecter</div>
+    <div class="auth-subtitle" id="authSubtitle">Accédez à vos favoris et votre historique.</div>
+    <div class="auth-field">
+      <label for="authEmail">Email</label>
+      <input type="email" id="authEmail" placeholder="vous@email.com" onkeydown="if(event.key==='Enter')soumettreAuth()">
+    </div>
+    <div class="auth-field">
+      <label for="authPassword">Mot de passe</label>
+      <input type="password" id="authPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')soumettreAuth()">
+    </div>
+    <div class="auth-msg" id="authMsg"></div>
+    <button class="auth-submit" id="authSubmitBtn" onclick="soumettreAuth()">Se connecter</button>
+    <div class="auth-toggle" id="authToggle">
+      Pas encore de compte ? <a href="#" onclick="basculerModeAuth();return false;">Créer un compte</a>
+    </div>
+  </div>
+</div>
 
 <div class="popup-overlay" id="popupOverlay">
   <div class="popup-card">
