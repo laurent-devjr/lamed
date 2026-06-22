@@ -350,6 +350,13 @@
     .popup-btn:hover { background: #4f46e5; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script>
+    // anon key — conçue pour être publique côté client (RLS protège les données)
+    const SUPABASE_URL = 'REMPLACER_PAR_VOTRE_SUPABASE_URL';
+    const SUPABASE_ANON_KEY = 'REMPLACER_PAR_VOTRE_SUPABASE_ANON_KEY';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
 </head>
 <body>
 
