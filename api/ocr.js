@@ -1,3 +1,6 @@
+const MODEL_SONNET = MODEL_SONNET;
+const MODEL_HAIKU = 'claude-haiku-4-5-20251001';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -44,7 +47,7 @@ export default async function handler(req, res) {
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
+      model: MODEL_SONNET,
       max_tokens: 2000,
       messages: [{ role: 'user', content: contentBlock }]
     })

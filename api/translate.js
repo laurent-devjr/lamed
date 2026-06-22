@@ -1,3 +1,6 @@
+const MODEL_SONNET = MODEL_SONNET;
+const MODEL_HAIKU = MODEL_HAIKU;
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -15,7 +18,7 @@ export default async function handler(req, res) {
           'anthropic-version': '2023-06-01'
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
+          model: MODEL_SONNET,
           max_tokens: 8000,
           messages: [{ role: 'user', content: `Tu es un traducteur expert en hébreu moderne israélien et en français littéraire. Traduis le texte hébreu ci-dessous en français de qualité littéraire (fidèle au sens, français parfait, style naturel et fluide), puis retourne IMMÉDIATEMENT les segments alignés mot-à-mot entre ta traduction et le texte hébreu.
 
@@ -85,7 +88,7 @@ Réponds UNIQUEMENT avec ce format JSON, sans aucun texte autour :
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: MODEL_HAIKU,
         max_tokens: 1000,
         messages: [{ role: 'user', content: prompt }]
       })

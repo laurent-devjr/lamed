@@ -1,3 +1,6 @@
+const MODEL_SONNET = 'claude-sonnet-4-6';
+const MODEL_HAIKU = MODEL_HAIKU;
+
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
 console.log('SUPABASE_URL:', SUPABASE_URL ? 'OK' : 'MANQUANT');
@@ -72,7 +75,7 @@ export default async function handler(req, res) {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: MODEL_HAIKU,
         max_tokens: 1500,
         messages: [{
           role: 'user',
@@ -157,7 +160,7 @@ Corrige la question en tenant compte de ce commentaire. Retourne UNIQUEMENT ce J
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: MODEL_HAIKU,
         max_tokens: 3000,
         messages: [{
           role: 'user',
@@ -204,7 +207,7 @@ Format JSON exact, sans backticks :
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: MODEL_HAIKU,
         max_tokens: 3000,
         messages: [{
           role: 'user',
