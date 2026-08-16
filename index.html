@@ -856,33 +856,67 @@ function nouveauTexte() {
       if (data.error) throw new Error(data.error);
 
       const pronoms = [
-        { key: 'ani',    lm: 'אני / Je',        lf: 'אני / Je',        m: 'ani_m',     f: 'ani_f' },
-        { key: 'ata_at', lm: 'אתה / Tu (m)',     lf: 'את / Tu (f)',     m: 'ata',       f: 'at' },
-        { key: 'hou_hi', lm: 'הוא / Il',         lf: 'היא / Elle',      m: 'hou',       f: 'hi' },
-        { key: 'anah',   lm: 'אנחנו / Nous',     lf: 'אנחנו / Nous',    m: 'anahnou_m', f: 'anahnou_f' },
-        { key: 'atem',   lm: 'אתם / Vous (m)',   lf: 'אתן / Vous (f)',  m: 'atem',      f: 'aten' },
-        { key: 'hem',    lm: 'הם / Ils',         lf: 'הן / Elles',      m: 'hem',       f: 'hen' },
+        { lm: 'אני / Je',        lf: 'אני / Je',        lg: 'Je',          m: 'ani_m',     f: 'ani_f' },
+        { lm: 'אתה / Tu (m)',     lf: 'את / Tu (f)',     lg: 'Tu',          m: 'ata',       f: 'at' },
+        { lm: 'הוא / Il',         lf: 'היא / Elle',      lg: 'Il / Elle',   m: 'hou',       f: 'hi' },
+        { lm: 'אנחנו / Nous',     lf: 'אנחנו / Nous',    lg: 'Nous',        m: 'anahnou_m', f: 'anahnou_f' },
+        { lm: 'אתם / Vous (m)',   lf: 'אתן / Vous (f)',  lg: 'Vous',        m: 'atem',      f: 'aten' },
+        { lm: 'הם / Ils',         lf: 'הן / Elles',      lg: 'Ils / Elles', m: 'hem',       f: 'hen' },
       ];
 
       const isHebrew = getLangues().langueApprise === 'he';
+      const isRTLConj = RTL_LANGS.has(getLangues().langueApprise);
       const thF = isHebrew ? 'Féminin / נקבה' : 'Féminin';
       const thM = isHebrew ? 'Masculin / זכר' : 'Masculin';
       const titlePresent = isHebrew ? 'Présent / הווה' : 'Présent';
       const titlePasse   = isHebrew ? 'Passé / עבר'   : 'Passé';
       const titleFutur   = isHebrew ? 'Futur / עתיד'  : 'Futur';
 
+      // Detect gender: any tense with non-empty m ≠ f → gendered
+      const allTenses = [data.present, data.passe, data.futur];
+      const gendered = allTenses.some(temps =>
+        pronoms.some(p => {
+          const m = (temps[p.m] || '').trim();
+          const f = (temps[p.f] || '').trim();
+          return m && f && m !== f;
+        })
+      );
+
+      // Strip Hebrew prefix "XX / " from bilingual pronom labels for LTR display
+      const stripHe = s => s.replace(/^[^ ]+ \/ /, '');
+
       function buildTable(temps) {
         const d = srcDirStyle();
-        const rows = pronoms.map(p => `
-          <tr>
-            <td class="conj-f" ${d}>${temps[p.f] || ''}</td>
-            <td class="conj-m" ${d}>${temps[p.m] || ''}</td>
-            <td class="conj-pronoun" ${d}>${p.lm}<br><span class="conj-pronoun-f">${p.lf}</span></td>
-          </tr>`).join('');
-        return `<table class="conj-table">
-          <thead><tr><th>${thF}</th><th>${thM}</th><th></th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>`;
+
+        if (!gendered) {
+          // Single "Forme" column — merge m and f
+          const rows = pronoms.map(p => {
+            const val = (temps[p.m] || temps[p.f] || '').trim();
+            return isRTLConj
+              ? `<tr><td class="conj-m" ${d}>${val}</td><td class="conj-pronoun" ${d}>${p.lg}</td></tr>`
+              : `<tr><td class="conj-pronoun" ${d}>${p.lg}</td><td class="conj-m" ${d}>${val}</td></tr>`;
+          }).join('');
+          const thead = isRTLConj
+            ? `<tr><th>Forme</th><th></th></tr>`
+            : `<tr><th></th><th>Forme</th></tr>`;
+          return `<table class="conj-table"><thead>${thead}</thead><tbody>${rows}</tbody></table>`;
+        }
+
+        // Gendered — pronom label: Hebrew+French for RTL, French-only for LTR
+        const rows = pronoms.map(p => {
+          const mVal = temps[p.m] || '';
+          const fVal = temps[p.f] || '';
+          const pronLabel = isRTLConj
+            ? `${p.lm}<br><span class="conj-pronoun-f">${p.lf}</span>`
+            : `${stripHe(p.lm)}<br><span class="conj-pronoun-f">${stripHe(p.lf)}</span>`;
+          return isRTLConj
+            ? `<tr><td class="conj-f" ${d}>${fVal}</td><td class="conj-m" ${d}>${mVal}</td><td class="conj-pronoun" ${d}>${pronLabel}</td></tr>`
+            : `<tr><td class="conj-pronoun" ${d}>${pronLabel}</td><td class="conj-m" ${d}>${mVal}</td><td class="conj-f" ${d}>${fVal}</td></tr>`;
+        }).join('');
+        const thead = isRTLConj
+          ? `<tr><th>${thF}</th><th>${thM}</th><th></th></tr>`
+          : `<tr><th></th><th>${thM}</th><th>${thF}</th></tr>`;
+        return `<table class="conj-table"><thead>${thead}</thead><tbody>${rows}</tbody></table>`;
       }
 
       document.getElementById('conj-contenu').innerHTML = `
