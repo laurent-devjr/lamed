@@ -383,6 +383,13 @@
     .auth-toggle { font-size: 12px; color: #78716c; text-align: center; }
     .auth-toggle a { color: #6366f1; text-decoration: none; font-weight: 500; }
     .auth-toggle a:hover { text-decoration: underline; }
+    /* LANGUAGE SELECTORS */
+    .lang-selectors { display: flex; align-items: center; gap: 6px; }
+    .lang-sel-group { display: flex; align-items: center; gap: 4px; }
+    .lang-sel-label { font-size: 10px; color: #a8a29e; font-weight: 500; white-space: nowrap; }
+    .lang-sel { font-size: 11px; padding: 4px 8px; border-radius: 7px; border: 0.5px solid #e4e2f0; background: white; color: #3730a3; font-weight: 500; font-family: 'Inter', sans-serif; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23a8a29e'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 6px center; padding-right: 20px; }
+    .lang-sel:focus { outline: none; border-color: #6366f1; }
+    .lang-sep { color: #d4d0eb; font-size: 14px; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -403,6 +410,36 @@
   <div class="nav-pills">
     <button class="pill active">Lire</button>
     <button class="pill">Mes mots</button>
+  </div>
+  <div class="lang-selectors">
+    <div class="lang-sel-group">
+      <span class="lang-sel-label">Je lis</span>
+      <select class="lang-sel" id="langApprise" onchange="onLangChange()">
+        <option value="he">Hébreu</option>
+        <option value="en">Anglais</option>
+        <option value="es">Espagnol</option>
+        <option value="de">Allemand</option>
+        <option value="it">Italien</option>
+        <option value="pt">Portugais</option>
+        <option value="ar">Arabe</option>
+        <option value="fa">Persan</option>
+        <option value="ru">Russe</option>
+        <option value="ja" disabled>Japonais</option>
+        <option value="zh" disabled>Chinois</option>
+      </select>
+    </div>
+    <span class="lang-sep">→</span>
+    <div class="lang-sel-group">
+      <span class="lang-sel-label">Je traduis en</span>
+      <select class="lang-sel" id="langNative" onchange="onLangChange()">
+        <option value="fr">Français</option>
+        <option value="en">Anglais</option>
+        <option value="es">Espagnol</option>
+        <option value="de">Allemand</option>
+        <option value="it">Italien</option>
+        <option value="pt">Portugais</option>
+      </select>
+    </div>
   </div>
   <div class="auth-zone" id="authZone">
     <button class="btn-auth" id="btnConnexion" onclick="ouvrirModalAuth()">Se connecter</button>
@@ -1086,6 +1123,35 @@ function _mettreAJourHeaderAuth(user) {
 supabaseClient.auth.onAuthStateChange((_event, session) => {
   _mettreAJourHeaderAuth(session?.user ?? null);
 });
+
+// ── Language selectors ────────────────────────────────────────────────────────
+const RTL_LANGS = new Set(['he', 'ar', 'fa']);
+
+function applyLangSettings() {
+  const apprise = document.getElementById('langApprise').value;
+  const textarea = document.getElementById('input');
+  if (textarea) {
+    textarea.dir = RTL_LANGS.has(apprise) ? 'rtl' : 'ltr';
+  }
+}
+
+function onLangChange() {
+  const apprise = document.getElementById('langApprise').value;
+  const native  = document.getElementById('langNative').value;
+  localStorage.setItem('lamed_lang_apprise', apprise);
+  localStorage.setItem('lamed_lang_native', native);
+  applyLangSettings();
+}
+
+(function initLangSelectors() {
+  const savedApprise = localStorage.getItem('lamed_lang_apprise') || 'he';
+  const savedNative  = localStorage.getItem('lamed_lang_native')  || 'fr';
+  const selApprise = document.getElementById('langApprise');
+  const selNative  = document.getElementById('langNative');
+  if (selApprise) selApprise.value = savedApprise;
+  if (selNative)  selNative.value  = savedNative;
+  applyLangSettings();
+})();
 
 </script>
 
