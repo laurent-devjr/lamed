@@ -6,12 +6,19 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { image, mediaType } = req.body;
+  const { image, mediaType, langueApprise = 'he' } = req.body;
   if (!image || !mediaType) {
     return res.status(400).json({ error: 'Champs "image" et "mediaType" requis' });
   }
 
-  const prompt = "Ce document contient du texte en hébreu. Extrais uniquement le texte hébreu que tu vois, sans aucune traduction ni commentaire. Retourne uniquement le texte hébreu brut, tel quel. Conserve exactement les retours à la ligne du texte original. Chaque ligne du texte dans l'image doit correspondre à une ligne dans ta réponse.";
+  const LANG_NAMES = {
+    he: 'hébreu', en: 'anglais', es: 'espagnol', de: 'allemand',
+    it: 'italien', pt: 'portugais', ar: 'arabe', fa: 'persan',
+    ru: 'russe', ja: 'japonais', zh: 'chinois', fr: 'français'
+  };
+  const nomAppris = LANG_NAMES[langueApprise] || langueApprise;
+
+  const prompt = `Ce document contient du texte en ${nomAppris}. Extrais uniquement le texte en ${nomAppris} que tu vois, sans aucune traduction ni commentaire. Retourne uniquement le texte brut, tel quel. Conserve exactement les retours à la ligne du texte original. Chaque ligne du texte dans l'image doit correspondre à une ligne dans ta réponse.`;
 
   const isPdf = mediaType === 'application/pdf';
 

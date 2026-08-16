@@ -6,12 +6,19 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { verbe } = req.body;
+  const { verbe, langueApprise = 'he' } = req.body;
   if (!verbe) {
     return res.status(400).json({ error: 'Champ "verbe" requis' });
   }
 
-  const prompt = `Tu es un expert en grammaire hébraïque. Donne les conjugaisons complètes du verbe hébreu dont l'infinitif est "${verbe}".
+  const LANG_NAMES = {
+    he: 'hébreu', en: 'anglais', es: 'espagnol', de: 'allemand',
+    it: 'italien', pt: 'portugais', ar: 'arabe', fa: 'persan',
+    ru: 'russe', ja: 'japonais', zh: 'chinois', fr: 'français'
+  };
+  const nomAppris = LANG_NAMES[langueApprise] || langueApprise;
+
+  const prompt = `Tu es un expert en grammaire ${nomAppris}. Donne les conjugaisons complètes du verbe en ${nomAppris} dont l'infinitif est "${verbe}".
 
 Réponds UNIQUEMENT avec ce format JSON, sans aucun texte autour :
 {

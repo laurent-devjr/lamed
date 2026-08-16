@@ -563,7 +563,7 @@
         const res = await fetch('/api/ocr', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: base64, mediaType })
+          body: JSON.stringify({ image: base64, mediaType, langueApprise: getLangues().langueApprise })
         });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
@@ -626,7 +626,7 @@
       const response = await fetch('/api/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mot, texte: texteComplet, type: 'mot' })
+        body: JSON.stringify({ mot, texte: texteComplet, type: 'mot', ...getLangues() })
       });
 
       const data = await response.json();
@@ -723,7 +723,7 @@ async function lancerTraduction(texte) {
     const response = await fetch('/api/translate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ texte, type: 'traduction_complete' })
+      body: JSON.stringify({ texte, type: 'traduction_complete', ...getLangues() })
     });
     const data = await response.json();
     console.log(data);
@@ -843,7 +843,7 @@ function nouveauTexte() {
       const response = await fetch('/api/conjugaison', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ verbe: infinitif })
+        body: JSON.stringify({ verbe: infinitif, langueApprise: getLangues().langueApprise })
       });
       const data = await response.json();
       if (data.error) throw new Error(data.error);
@@ -934,7 +934,7 @@ async function ouvrirDetail() {
     const response = await fetch('/api/translate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mot: motDetailCourant, texte: texteComplet, type: 'mot' })
+      body: JSON.stringify({ mot: motDetailCourant, texte: texteComplet, type: 'mot', ...getLangues() })
     });
     const data = await response.json();
     const texteReponse = data.content[0].text.replace(/```json|```/g, '').trim();
@@ -1123,6 +1123,14 @@ function _mettreAJourHeaderAuth(user) {
 supabaseClient.auth.onAuthStateChange((_event, session) => {
   _mettreAJourHeaderAuth(session?.user ?? null);
 });
+
+// ── Language helpers ──────────────────────────────────────────────────────────
+function getLangues() {
+  return {
+    langueApprise: document.getElementById('langApprise')?.value || 'he',
+    langueNative:  document.getElementById('langNative')?.value  || 'fr'
+  };
+}
 
 // ── Language selectors ────────────────────────────────────────────────────────
 const RTL_LANGS = new Set(['he', 'ar', 'fa']);
