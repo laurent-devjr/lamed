@@ -378,6 +378,36 @@
     .lang-sel { font-size: 11px; padding: 4px 8px; border-radius: 7px; border: 0.5px solid #e4e2f0; background: white; color: #3730a3; font-weight: 500; font-family: 'Inter', sans-serif; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23a8a29e'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 6px center; padding-right: 20px; }
     .lang-sel:focus { outline: none; border-color: #6366f1; }
     .lang-sep { color: #d4d0eb; font-size: 14px; }
+
+    /* MOBILE HEADER — hidden on desktop */
+    .lang-pill-btn { display: none; align-items: center; gap: 3px; padding: 5px 10px; background: #ede9fe; border: none; border-radius: 20px; font-size: 12px; font-weight: 600; color: #4f46e5; cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap; line-height: 1; }
+    .lang-pill-btn:active { background: #ddd6fe; }
+    .burger-btn { display: none; align-items: center; justify-content: center; background: none; border: none; cursor: pointer; font-size: 22px; color: #57534e; padding: 4px 6px; border-radius: 8px; line-height: 1; }
+    .burger-btn:active { background: #f5f3ff; color: #6366f1; }
+
+    .lang-sheet-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 200; }
+    .lang-sheet-overlay.open { display: block; }
+    .lang-sheet { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 16px 16px 0 0; padding: 0 20px 36px; z-index: 201; box-shadow: 0 -4px 24px rgba(0,0,0,0.08); }
+    .lang-sheet.open { display: block; }
+    .lang-sheet-handle { width: 36px; height: 4px; background: #e4e2f0; border-radius: 2px; margin: 10px auto 20px; }
+    .lang-sheet-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid #f0f0ee; }
+    .lang-sheet-row:last-child { border-bottom: none; }
+    .lang-sheet-label { font-size: 14px; color: #57534e; font-weight: 500; }
+    .lang-sheet .lang-sel { font-size: 14px; padding: 8px 28px 8px 10px; }
+
+    .burger-menu { display: none; position: fixed; top: 57px; left: 0; right: 0; background: white; border-bottom: 1px solid #e4e2f0; padding: 12px 20px 20px; z-index: 150; box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
+    .burger-menu.open { display: block; }
+    .burger-nav { display: flex; gap: 4px; margin-bottom: 14px; }
+    .burger-divider { height: 1px; background: #f0f0ee; margin-bottom: 14px; }
+    .burger-auth { display: flex; align-items: center; gap: 8px; }
+
+    @media (max-width: 700px) {
+      .nav-pills { display: none; }
+      .lang-selectors { display: none; }
+      .auth-zone { display: none; }
+      .lang-pill-btn { display: flex; }
+      .burger-btn { display: flex; }
+    }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -436,6 +466,14 @@
       <button class="btn-logout" onclick="seDeconnecter()">Déconnexion</button>
     </div>
   </div>
+  <!-- Mobile only -->
+  <button class="lang-pill-btn" id="langPillBtn" onclick="toggleLangSheet()">
+    <span id="langPillText">HE → FR</span>
+    <i class="ti ti-chevron-down" style="font-size:9px;margin-left:2px"></i>
+  </button>
+  <button class="burger-btn" id="burgerBtn" onclick="toggleBurger(event)">
+    <i class="ti ti-menu-2"></i>
+  </button>
 </div>
 
 <div class="layout" id="layout">
@@ -1271,15 +1309,21 @@ async function seDeconnecter() {
 }
 
 function _mettreAJourHeaderAuth(user) {
-  const btnConnexion = document.getElementById('btnConnexion');
-  const userChip = document.getElementById('userChip');
+  const btnConnexion  = document.getElementById('btnConnexion');
+  const userChip      = document.getElementById('userChip');
+  const mBtnConnexion = document.getElementById('mBtnConnexion');
+  const mUserChip     = document.getElementById('mUserChip');
   if (user) {
-    btnConnexion.style.display = 'none';
-    userChip.style.display = 'flex';
-    document.getElementById('userEmail').textContent = user.email;
+    btnConnexion.style.display  = 'none';
+    userChip.style.display      = 'flex';
+    document.getElementById('userEmail').textContent  = user.email;
+    if (mBtnConnexion) mBtnConnexion.style.display = 'none';
+    if (mUserChip)     { mUserChip.style.display = 'flex'; document.getElementById('mUserEmail').textContent = user.email; }
   } else {
-    btnConnexion.style.display = '';
-    userChip.style.display = 'none';
+    btnConnexion.style.display  = '';
+    userChip.style.display      = 'none';
+    if (mBtnConnexion) mBtnConnexion.style.display = '';
+    if (mUserChip)     mUserChip.style.display = 'none';
   }
 }
 
@@ -1357,12 +1401,70 @@ function srcDirStyle() {
     : 'style="direction:ltr;text-align:left"';
 }
 
+function updateLangPill() {
+  const pill = document.getElementById('langPillText');
+  if (!pill) return;
+  const { langueApprise, langueNative } = getLangues();
+  pill.textContent = langueApprise.toUpperCase() + ' → ' + langueNative.toUpperCase();
+}
+
+function toggleLangSheet() {
+  const sheet = document.getElementById('langSheet');
+  const overlay = document.getElementById('langSheetOverlay');
+  if (sheet.classList.contains('open')) {
+    closeLangSheet();
+  } else {
+    // Sync mobile selects to current values before opening
+    const mA = document.getElementById('mLangApprise');
+    const mN = document.getElementById('mLangNative');
+    if (mA) mA.value = document.getElementById('langApprise').value;
+    if (mN) mN.value = document.getElementById('langNative').value;
+    sheet.classList.add('open');
+    overlay.classList.add('open');
+  }
+}
+function closeLangSheet() {
+  document.getElementById('langSheet').classList.remove('open');
+  document.getElementById('langSheetOverlay').classList.remove('open');
+}
+
+function toggleBurger(e) {
+  if (e) e.stopPropagation();
+  document.getElementById('burgerMenu').classList.toggle('open');
+}
+function closeBurger() {
+  document.getElementById('burgerMenu').classList.remove('open');
+}
+
+function onMobileLangChange() {
+  // Mirror mobile selects → main selects, then run the usual change handler
+  document.getElementById('langApprise').value = document.getElementById('mLangApprise').value;
+  document.getElementById('langNative').value  = document.getElementById('mLangNative').value;
+  onLangChange();
+  closeLangSheet();
+}
+
+// Close burger on outside tap
+document.addEventListener('click', function (e) {
+  const menu = document.getElementById('burgerMenu');
+  const btn  = document.getElementById('burgerBtn');
+  if (menu && menu.classList.contains('open') && !menu.contains(e.target) && btn && !btn.contains(e.target)) {
+    closeBurger();
+  }
+});
+
 function onLangChange() {
   const apprise = document.getElementById('langApprise').value;
   const native  = document.getElementById('langNative').value;
   localStorage.setItem('lamed_lang_apprise', apprise);
   localStorage.setItem('lamed_lang_native', native);
+  // Keep mobile mirrors in sync when changed from desktop
+  const mA = document.getElementById('mLangApprise');
+  const mN = document.getElementById('mLangNative');
+  if (mA) mA.value = apprise;
+  if (mN) mN.value = native;
   applyLangSettings();
+  updateLangPill();
 }
 
 (function initLangSelectors() {
@@ -1372,11 +1474,65 @@ function onLangChange() {
   const selNative  = document.getElementById('langNative');
   if (selApprise) selApprise.value = savedApprise;
   if (selNative)  selNative.value  = savedNative;
+  const mA = document.getElementById('mLangApprise');
+  const mN = document.getElementById('mLangNative');
+  if (mA) mA.value = savedApprise;
+  if (mN) mN.value = savedNative;
   applyLangSettings();
   setupParallelSync();
+  updateLangPill();
 })();
 
 </script>
+
+<!-- Mobile lang sheet -->
+<div class="lang-sheet-overlay" id="langSheetOverlay" onclick="closeLangSheet()"></div>
+<div class="lang-sheet" id="langSheet">
+  <div class="lang-sheet-handle"></div>
+  <div class="lang-sheet-row">
+    <span class="lang-sheet-label">Je lis</span>
+    <select class="lang-sel" id="mLangApprise" onchange="onMobileLangChange()">
+      <option value="he">Hébreu</option>
+      <option value="en">Anglais</option>
+      <option value="es">Espagnol</option>
+      <option value="de">Allemand</option>
+      <option value="it">Italien</option>
+      <option value="pt">Portugais</option>
+      <option value="ar">Arabe</option>
+      <option value="fa">Persan</option>
+      <option value="ru">Russe</option>
+      <option value="ja" disabled>Japonais</option>
+      <option value="zh" disabled>Chinois</option>
+    </select>
+  </div>
+  <div class="lang-sheet-row">
+    <span class="lang-sheet-label">Je traduis en</span>
+    <select class="lang-sel" id="mLangNative" onchange="onMobileLangChange()">
+      <option value="fr">Français</option>
+      <option value="en">Anglais</option>
+      <option value="es">Espagnol</option>
+      <option value="de">Allemand</option>
+      <option value="it">Italien</option>
+      <option value="pt">Portugais</option>
+    </select>
+  </div>
+</div>
+
+<!-- Mobile burger menu -->
+<div class="burger-menu" id="burgerMenu">
+  <div class="burger-nav">
+    <button class="pill active">Lire</button>
+    <button class="pill">Mes mots</button>
+  </div>
+  <div class="burger-divider"></div>
+  <div class="burger-auth">
+    <button class="btn-auth" id="mBtnConnexion" onclick="ouvrirModalAuth();closeBurger()">Se connecter</button>
+    <div class="user-chip" id="mUserChip" style="display:none">
+      <span class="user-email" id="mUserEmail"></span>
+      <button class="btn-logout" onclick="seDeconnecter();closeBurger()">Déconnexion</button>
+    </div>
+  </div>
+</div>
 
 <div class="auth-modal-overlay" id="authModalOverlay" onclick="if(event.target===this)fermerModalAuth()">
   <div class="auth-modal-card">
