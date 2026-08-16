@@ -977,20 +977,82 @@ function highlightGroup(g, primaryEl) {
   });
 }
 
-function scrollToHL() {
-  ['parallelHe', 'parallelFr'].forEach(colId => {
-    const colEl = document.getElementById(colId);
-    const hl = colEl.querySelector('.hl-primary, .hl-echo');
-    if (!hl) return;
-    const colRect = colEl.getBoundingClientRect();
-    const hlRect  = hl.getBoundingClientRect();
-    colEl.scrollTop = hlRect.top - colRect.top + colEl.scrollTop + hlRect.height / 2 - colEl.clientHeight / 2;
+// ── Parallel scroll helpers ───────────────────────────────────────────────────
+
+let hoverScrollTimer = null;
+let syncLock = false;
+let syncRafId = null;
+const isMobile = () => window.innerWidth <= 700;
+
+function isVisibleInCol(el, col) {
+  const cr = col.getBoundingClientRect();
+  const er = el.getBoundingClientRect();
+  return er.top >= cr.top - 8 && er.bottom <= cr.bottom + 8;
+}
+
+function scrollToUpperThird(el, col) {
+  const cr = col.getBoundingClientRect();
+  const er = el.getBoundingClientRect();
+  col.scrollTo({
+    top: Math.max(0, er.top - cr.top + col.scrollTop - col.clientHeight * 0.25),
+    behavior: 'smooth'
   });
 }
+
+// Scroll the OTHER column so the correspondent of g lands in view (if not already)
+function scrollCorrespondentIntoView(g, side) {
+  if (!g) return;
+  const otherSide = side === 'src' ? 'cible' : 'src';
+  const peer = document.querySelector('.seg[data-g="' + g + '"][data-side="' + otherSide + '"]');
+  if (!peer) return;
+  const col = peer.closest('.parallel-col');
+  if (!col || isVisibleInCol(peer, col)) return;
+  scrollToUpperThird(peer, col);
+}
+
+// Anchor-based sync: scroll dstCol to match what srcCol is showing
+function syncScrollFrom(srcCol, dstCol) {
+  const srcRect = srcCol.getBoundingClientRect();
+  let anchor = null;
+  for (const seg of srcCol.querySelectorAll('.seg[data-g]')) {
+    const r = seg.getBoundingClientRect();
+    if (r.top < srcRect.bottom && r.bottom > srcRect.top) { anchor = seg; break; }
+  }
+  if (!anchor) return;
+  const g = anchor.dataset.g;
+  const dstSide = dstCol.id === 'parallelHe' ? 'src' : 'cible';
+  const peer = dstCol.querySelector('.seg[data-g="' + g + '"][data-side="' + dstSide + '"]');
+  if (!peer) return;
+  const anchorOffset = anchor.getBoundingClientRect().top - srcRect.top;
+  const peerOffset   = peer.getBoundingClientRect().top - dstCol.getBoundingClientRect().top;
+  dstCol.scrollTop += peerOffset - anchorOffset;
+}
+
+function setupParallelSync() {
+  function makeHandler(srcId, dstId) {
+    return function () {
+      if (syncLock || isMobile()) return;
+      if (syncRafId) cancelAnimationFrame(syncRafId);
+      syncRafId = requestAnimationFrame(function () {
+        syncLock = true;
+        syncScrollFrom(document.getElementById(srcId), document.getElementById(dstId));
+        setTimeout(function () { syncLock = false; }, 50);
+      });
+    };
+  }
+  document.getElementById('parallelHe').addEventListener('scroll', makeHandler('parallelHe', 'parallelFr'));
+  document.getElementById('parallelFr').addEventListener('scroll', makeHandler('parallelFr', 'parallelHe'));
+}
+
+// ── Segment event handlers ────────────────────────────────────────────────────
 
 function onSegHover(el) {
   if (activeClickG !== null) return;
   highlightGroup(el.dataset.g, el);
+  clearTimeout(hoverScrollTimer);
+  hoverScrollTimer = setTimeout(function () {
+    scrollCorrespondentIntoView(el.dataset.g, el.dataset.side);
+  }, 80);
 }
 
 function onParallelMouseleave() {
@@ -1004,19 +1066,18 @@ function onClickSrc(el) {
   highlightGroup(g, el);
   motDetailCourant = el.textContent.trim();
   document.getElementById('detailBar').classList.add('visible');
-  scrollToHL();
+  scrollCorrespondentIntoView(g, 'src');
 }
 
 function onClickCible(el) {
   const g = el.dataset.g != null ? el.dataset.g : null;
   activeClickG = g;
   highlightGroup(g, el);
-  // Resolve motDetailCourant from the linked source span
   const srcSpan = g ? document.querySelector('.seg[data-g="' + g + '"][data-side="src"]') : null;
   motDetailCourant = srcSpan ? srcSpan.textContent.trim() : null;
   if (motDetailCourant) document.getElementById('detailBar').classList.add('visible');
   else document.getElementById('detailBar').classList.remove('visible');
-  scrollToHL();
+  scrollCorrespondentIntoView(g, 'cible');
 }
 
 async function ouvrirDetail() {
@@ -1312,6 +1373,7 @@ function onLangChange() {
   if (selApprise) selApprise.value = savedApprise;
   if (selNative)  selNative.value  = savedNative;
   applyLangSettings();
+  setupParallelSync();
 })();
 
 </script>
