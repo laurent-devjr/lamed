@@ -458,7 +458,7 @@
 
     <!-- Zone de saisie — disparaît après analyse -->
     <div class="input-card" id="inputCard">
-      <div class="input-label">Colle ton texte hébreu</div>
+      <div class="input-label">Colle ton texte en hébreu</div>
       <textarea id="input" placeholder="הדבק כאן טקסט בעברית..."></textarea>
       <div class="btn-row">
         <input type="file" id="photoInput" accept=".jpg,.jpeg,.png,.pdf,.docx" style="display:none" onchange="ocrPhoto(this)">
@@ -645,9 +645,11 @@
         ? `<div class="panel-niqqud">${json.motAvecNiqqud}</div><div class="divider"></div>`
         : '';
 
+      const racineLabel = SEMITIC_LANGS.has(getLangues().langueApprise) ? 'Racine' : 'Étymologie';
+
       document.getElementById('panel-contenu').innerHTML = `
         ${niqqud}
-        <div class="panel-label">Racine</div>
+        <div class="panel-label">${racineLabel}</div>
         <div class="panel-val">${json.racine}</div>
         <div class="panel-label">Analyse</div>
         <div class="panel-val">${json.analyse}</div>
@@ -857,6 +859,13 @@ function nouveauTexte() {
         { key: 'hem',    lm: 'הם / Ils',         lf: 'הן / Elles',      m: 'hem',       f: 'hen' },
       ];
 
+      const isHebrew = getLangues().langueApprise === 'he';
+      const thF = isHebrew ? 'Féminin / נקבה' : 'Féminin';
+      const thM = isHebrew ? 'Masculin / זכר' : 'Masculin';
+      const titlePresent = isHebrew ? 'Présent / הווה' : 'Présent';
+      const titlePasse   = isHebrew ? 'Passé / עבר'   : 'Passé';
+      const titleFutur   = isHebrew ? 'Futur / עתיד'  : 'Futur';
+
       function buildTable(temps) {
         const rows = pronoms.map(p => `
           <tr>
@@ -865,17 +874,17 @@ function nouveauTexte() {
             <td class="conj-pronoun">${p.lm}<br><span class="conj-pronoun-f">${p.lf}</span></td>
           </tr>`).join('');
         return `<table class="conj-table">
-          <thead><tr><th>Féminin / נקבה</th><th>Masculin / זכר</th><th></th></tr></thead>
+          <thead><tr><th>${thF}</th><th>${thM}</th><th></th></tr></thead>
           <tbody>${rows}</tbody>
         </table>`;
       }
 
       document.getElementById('conj-contenu').innerHTML = `
-        <div class="conj-section-title">Présent / הווה</div>
+        <div class="conj-section-title">${titlePresent}</div>
         ${buildTable(data.present)}
-        <div class="conj-section-title">Passé / עבר</div>
+        <div class="conj-section-title">${titlePasse}</div>
         ${buildTable(data.passe)}
-        <div class="conj-section-title">Futur / עתיד</div>
+        <div class="conj-section-title">${titleFutur}</div>
         ${buildTable(data.futur)}
       `;
     } catch (err) {
@@ -943,7 +952,8 @@ async function ouvrirDetail() {
     document.getElementById('panel-badges').innerHTML = json.badges.map(b => '<span class="badge">' + b + '</span>').join('');
     const btnConj = json.estVerbe && json.infinitif ? '<button class="btn-conjugaison" onclick="afficherConjugaisons(\'' + json.infinitif.replace(/'/g, "\\'") + '\')"><i class="ti ti-layout-grid"></i> Conjugaisons →</button>' : '';
     const niqqud = json.motAvecNiqqud ? '<div class="panel-niqqud">' + json.motAvecNiqqud + '</div><div class="divider"></div>' : '';
-    document.getElementById('panel-contenu').innerHTML = niqqud + '<div class="panel-label">Racine</div><div class="panel-val">' + json.racine + '</div><div class="panel-label">Analyse</div><div class="panel-val">' + json.analyse + '</div>' + btnConj;
+    const racineLabel = SEMITIC_LANGS.has(getLangues().langueApprise) ? 'Racine' : 'Étymologie';
+    document.getElementById('panel-contenu').innerHTML = niqqud + '<div class="panel-label">' + racineLabel + '</div><div class="panel-val">' + json.racine + '</div><div class="panel-label">Analyse</div><div class="panel-val">' + json.analyse + '</div>' + btnConj;
 
     document.getElementById('btnStar').style.display = '';
     detailCourant = { mot: motDetailCourant, traduction: json.traduction, racine: json.racine };
@@ -1133,14 +1143,39 @@ function getLangues() {
 }
 
 // ── Language selectors ────────────────────────────────────────────────────────
-const RTL_LANGS = new Set(['he', 'ar', 'fa']);
+const RTL_LANGS    = new Set(['he', 'ar', 'fa']);
+const SEMITIC_LANGS = new Set(['he', 'ar']);
+
+const LANG_FR_NAMES = {
+  he: 'hébreu', en: 'anglais', es: 'espagnol', de: 'allemand',
+  it: 'italien', pt: 'portugais', ar: 'arabe', fa: 'persan',
+  ru: 'russe', ja: 'japonais', zh: 'chinois', fr: 'français'
+};
+
+const LANG_PLACEHOLDERS = {
+  he: 'הדבק כאן טקסט בעברית...',
+  en: 'Paste your text here...',
+  es: 'Pega tu texto aquí...',
+  de: 'Füge deinen Text hier ein...',
+  it: 'Incolla il tuo testo qui...',
+  pt: 'Cole o seu texto aqui...',
+  ar: 'الصق النص هنا...',
+  fa: 'متن خود را اینجا جای‌گذاری کنید...',
+  ru: 'Вставьте текст сюда...',
+  ja: 'ここにテキストを貼り付けてください...',
+  zh: '在此粘贴文本...',
+};
 
 function applyLangSettings() {
   const apprise = document.getElementById('langApprise').value;
   const textarea = document.getElementById('input');
   if (textarea) {
     textarea.dir = RTL_LANGS.has(apprise) ? 'rtl' : 'ltr';
+    textarea.placeholder = LANG_PLACEHOLDERS[apprise] || '...';
   }
+  const inputLabel = document.querySelector('.input-label');
+  const nom = LANG_FR_NAMES[apprise] || apprise;
+  if (inputLabel) inputLabel.textContent = `Colle ton texte en ${nom}`;
 }
 
 function onLangChange() {
