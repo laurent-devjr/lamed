@@ -73,7 +73,6 @@
 }
 .translation-text.visible { display: block; }
     .he-text {
-      direction: rtl;
       font-size: 22px;
       line-height: 1.9;
       color: #2c2c2a;
@@ -137,8 +136,6 @@
     .panel-he-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
     .panel-he {
       font-size: 30px;
-      direction: rtl;
-      text-align: right;
       color: #2c2c2a;
       font-weight: 600;
       flex: 1;
@@ -174,8 +171,6 @@
     }
     .panel-niqqud {
       font-size: 26px;
-      direction: rtl;
-      text-align: right;
       color: #2c2c2a;
       font-weight: 500;
       margin-bottom: 14px;
@@ -210,8 +205,6 @@
     .conj-panel.open { display: block; }
     .conj-infinitif {
       font-size: 28px;
-      direction: rtl;
-      text-align: right;
       font-weight: 700;
       color: #2c2c2a;
       margin: 36px 0 18px;
@@ -247,22 +240,16 @@
     }
     .conj-table td.conj-m {
       color: #185fa5;
-      direction: rtl;
-      text-align: right;
       font-size: 17px;
     }
     .conj-table td.conj-f {
       color: #b5420a;
-      direction: rtl;
-      text-align: right;
       font-size: 17px;
     }
     .conj-table td.conj-pronoun {
       color: #aaa;
       font-size: 12px;
       white-space: nowrap;
-      text-align: right;
-      direction: rtl;
       line-height: 1.6;
     }
     .conj-pronoun-f { color: #b5420a; }
@@ -567,6 +554,8 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ image: base64, mediaType, langueApprise: getLangues().langueApprise })
         });
+        if (!res.ok) { const t = await res.text(); throw new Error('Erreur serveur : ' + t.substring(0, 500)); }
+        if (!(res.headers.get('content-type') || '').includes('application/json')) { const t = await res.text(); throw new Error('Réponse non-JSON : ' + t.substring(0, 500)); }
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         textarea.value = data.texte.replace(/\\n/g, '\n');
@@ -605,6 +594,7 @@
       document.getElementById('analyseSpinner').classList.remove('visible');
       document.getElementById('inputCard').style.display = 'none';
       document.getElementById('textCard').classList.add('visible');
+      applyLangSettings();
     });
   }
 
@@ -630,7 +620,8 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mot, texte: texteComplet, type: 'mot', ...getLangues() })
       });
-
+      if (!response.ok) { const t = await response.text(); throw new Error('Erreur serveur : ' + t.substring(0, 500)); }
+      if (!(response.headers.get('content-type') || '').includes('application/json')) { const t = await response.text(); throw new Error('Réponse non-JSON : ' + t.substring(0, 500)); }
       const data = await response.json();
       const texteReponse = data.content[0].text.replace(/```json|```/g, '').trim();
       const json = JSON.parse(texteReponse);
@@ -644,7 +635,7 @@
         : '';
 
       const niqqud = json.motAvecNiqqud
-        ? `<div class="panel-niqqud">${json.motAvecNiqqud}</div><div class="divider"></div>`
+        ? `<div class="panel-niqqud" ${srcDirStyle()}>${json.motAvecNiqqud}</div><div class="divider"></div>`
         : '';
 
       const racineLabel = SEMITIC_LANGS.has(getLangues().langueApprise) ? 'Racine' : 'Étymologie';
@@ -730,6 +721,8 @@ async function lancerTraduction(texte) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ texte, type: 'traduction_complete', ...getLangues() })
     });
+    if (!response.ok) { const t = await response.text(); throw new Error('Erreur serveur : ' + t.substring(0, 500)); }
+    if (!(response.headers.get('content-type') || '').includes('application/json')) { const t = await response.text(); throw new Error('Réponse non-JSON : ' + t.substring(0, 500)); }
     const data = await response.json();
     console.log(data);
     if (data.error) throw new Error(data.error);
@@ -857,6 +850,8 @@ function nouveauTexte() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ verbe: infinitif, langueApprise: getLangues().langueApprise })
       });
+      if (!response.ok) { const t = await response.text(); throw new Error('Erreur serveur : ' + t.substring(0, 500)); }
+      if (!(response.headers.get('content-type') || '').includes('application/json')) { const t = await response.text(); throw new Error('Réponse non-JSON : ' + t.substring(0, 500)); }
       const data = await response.json();
       if (data.error) throw new Error(data.error);
 
@@ -877,11 +872,12 @@ function nouveauTexte() {
       const titleFutur   = isHebrew ? 'Futur / עתיד'  : 'Futur';
 
       function buildTable(temps) {
+        const d = srcDirStyle();
         const rows = pronoms.map(p => `
           <tr>
-            <td class="conj-f">${temps[p.f] || ''}</td>
-            <td class="conj-m">${temps[p.m] || ''}</td>
-            <td class="conj-pronoun">${p.lm}<br><span class="conj-pronoun-f">${p.lf}</span></td>
+            <td class="conj-f" ${d}>${temps[p.f] || ''}</td>
+            <td class="conj-m" ${d}>${temps[p.m] || ''}</td>
+            <td class="conj-pronoun" ${d}>${p.lm}<br><span class="conj-pronoun-f">${p.lf}</span></td>
           </tr>`).join('');
         return `<table class="conj-table">
           <thead><tr><th>${thF}</th><th>${thM}</th><th></th></tr></thead>
@@ -1005,13 +1001,15 @@ async function ouvrirDetail() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mot: motDetailCourant, texte: texteComplet, type: 'mot', ...getLangues() })
     });
+    if (!response.ok) { const t = await response.text(); throw new Error('Erreur serveur : ' + t.substring(0, 500)); }
+    if (!(response.headers.get('content-type') || '').includes('application/json')) { const t = await response.text(); throw new Error('Réponse non-JSON : ' + t.substring(0, 500)); }
     const data = await response.json();
     const texteReponse = data.content[0].text.replace(/```json|```/g, '').trim();
     const json = JSON.parse(texteReponse);
     document.getElementById('panel-traduction').textContent = json.traduction;
     document.getElementById('panel-badges').innerHTML = json.badges.map(b => '<span class="badge">' + b + '</span>').join('');
     const btnConj = json.estVerbe && json.infinitif ? '<button class="btn-conjugaison" onclick="afficherConjugaisons(\'' + json.infinitif.replace(/'/g, "\\'") + '\')"><i class="ti ti-layout-grid"></i> Conjugaisons →</button>' : '';
-    const niqqud = json.motAvecNiqqud ? '<div class="panel-niqqud">' + json.motAvecNiqqud + '</div><div class="divider"></div>' : '';
+    const niqqud = json.motAvecNiqqud ? '<div class="panel-niqqud" ' + srcDirStyle() + '>' + json.motAvecNiqqud + '</div><div class="divider"></div>' : '';
     const racineLabel = SEMITIC_LANGS.has(getLangues().langueApprise) ? 'Racine' : 'Étymologie';
     document.getElementById('panel-contenu').innerHTML = niqqud + '<div class="panel-label">' + racineLabel + '</div><div class="panel-val">' + json.racine + '</div><div class="panel-label">Analyse</div><div class="panel-val">' + json.analyse + '</div>' + btnConj;
 
@@ -1228,16 +1226,40 @@ const LANG_PLACEHOLDERS = {
 
 function applyLangSettings() {
   const apprise = document.getElementById('langApprise').value;
+  const isRTL = RTL_LANGS.has(apprise);
+  const dir   = isRTL ? 'rtl' : 'ltr';
+  const align = isRTL ? 'right' : 'left';
+
+  function applyDir(el) {
+    if (!el) return;
+    el.style.direction = dir;
+    el.style.textAlign = align;
+  }
+
+  // Textarea de saisie
   const textarea = document.getElementById('input');
   if (textarea) {
-    const isRTL = RTL_LANGS.has(apprise);
-    textarea.style.direction = isRTL ? 'rtl' : 'ltr';
-    textarea.style.textAlign = isRTL ? 'right' : 'left';
+    applyDir(textarea);
     textarea.placeholder = LANG_PLACEHOLDERS[apprise] || '...';
   }
+  // Zone de lecture (texte analysé)
+  applyDir(document.getElementById('output'));
+  // Mot affiché dans le panneau de détail
+  applyDir(document.getElementById('panel-mot'));
+  // Infinitif dans le panneau de conjugaison
+  applyDir(document.getElementById('conj-infinitif'));
+
   const inputLabel = document.querySelector('.input-label');
   const nom = LANG_FR_NAMES[apprise] || apprise;
   if (inputLabel) inputLabel.textContent = `Colle ton texte en ${nom}`;
+}
+
+// Retourne un attribut style inline pour les éléments créés dynamiquement
+function srcDirStyle() {
+  const isRTL = RTL_LANGS.has(getLangues().langueApprise);
+  return isRTL
+    ? 'style="direction:rtl;text-align:right"'
+    : 'style="direction:ltr;text-align:left"';
 }
 
 function onLangChange() {

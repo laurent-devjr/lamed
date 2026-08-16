@@ -1,3 +1,5 @@
+import { extractJSON } from './_utils.js';
+
 const MODEL_SONNET = 'claude-sonnet-4-6';
 const MODEL_HAIKU = 'claude-haiku-4-5-20251001';
 
@@ -106,9 +108,19 @@ Corrige la question en tenant compte de ce commentaire. Retourne UNIQUEMENT ce J
     });
 
     const correctionData = await correctionRes.json();
-    const corrected = JSON.parse(
-      correctionData.content[0].text.replace(/```json|```/g, '').trim()
-    );
+    const corrRaw = correctionData.content[0].text;
+    const corrExtracted = extractJSON(corrRaw);
+    if (!corrExtracted) {
+      console.error('[admin/commenter] Pas de JSON trouvé. Réponse brute complète :\n', corrRaw);
+      return res.status(500).json({ error: 'Pas de JSON dans la réponse (correction)' });
+    }
+    let corrected;
+    try {
+      corrected = JSON.parse(corrExtracted);
+    } catch (parseErr) {
+      console.error('[admin/commenter] JSON invalide:', parseErr.message, '\nTexte extrait complet :\n', corrExtracted);
+      return res.status(500).json({ error: 'JSON invalide: ' + parseErr.message });
+    }
 
     commentaires.push({
       type: 'correction_claude',
@@ -194,9 +206,19 @@ Format JSON exact, sans backticks :
     });
 
     const genData = await gen.json();
-    let questions = JSON.parse(
-      genData.content[0].text.replace(/```json|```/g, '').trim()
-    );
+    const genRaw = genData.content[0].text;
+    const genExtracted = extractJSON(genRaw);
+    if (!genExtracted) {
+      console.error('[admin/generer] Pas de JSON (génération). Réponse brute complète :\n', genRaw);
+      return res.status(500).json({ error: 'Pas de JSON dans la réponse (génération)' });
+    }
+    let questions;
+    try {
+      questions = JSON.parse(genExtracted);
+    } catch (parseErr) {
+      console.error('[admin/generer] JSON invalide (génération):', parseErr.message, '\nTexte extrait complet :\n', genExtracted);
+      return res.status(500).json({ error: 'JSON invalide: ' + parseErr.message });
+    }
 
     // Étape 2 : Vérification par l'équipe pédagogique virtuelle
     const verif = await fetch('https://api.anthropic.com/v1/messages', {
@@ -236,9 +258,19 @@ Réponds UNIQUEMENT avec ce JSON sans backticks :
     });
 
     const verifData = await verif.json();
-    const rapports = JSON.parse(
-      verifData.content[0].text.replace(/```json|```/g, '').trim()
-    );
+    const verifRaw = verifData.content[0].text;
+    const verifExtracted = extractJSON(verifRaw);
+    if (!verifExtracted) {
+      console.error('[admin/generer] Pas de JSON (vérification). Réponse brute complète :\n', verifRaw);
+      return res.status(500).json({ error: 'Pas de JSON dans la réponse (vérification)' });
+    }
+    let rapports;
+    try {
+      rapports = JSON.parse(verifExtracted);
+    } catch (parseErr) {
+      console.error('[admin/generer] JSON invalide (vérification):', parseErr.message, '\nTexte extrait complet :\n', verifExtracted);
+      return res.status(500).json({ error: 'JSON invalide: ' + parseErr.message });
+    }
 
     // Combine questions + rapports
     const questionsAvecRapport = questions.map((q, i) => ({

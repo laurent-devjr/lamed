@@ -1,3 +1,5 @@
+import { extractJSON } from './_utils.js';
+
 const MODEL_SONNET = 'claude-sonnet-4-6';
 const MODEL_HAIKU = 'claude-haiku-4-5-20251001';
 
@@ -67,8 +69,19 @@ Réponds UNIQUEMENT avec ce format JSON, sans aucun texte autour :
       return res.status(500).json({ error: data.error.message });
     }
 
-    const texte = data.content[0].text.replace(/```json|```/g, '').trim();
-    const json = JSON.parse(texte);
+    const rawText = data.content[0].text;
+    const extracted = extractJSON(rawText);
+    if (!extracted) {
+      console.error('[conjugaison] Pas de JSON trouvé. Réponse brute complète :\n', rawText);
+      return res.status(500).json({ error: 'Pas de JSON dans la réponse' });
+    }
+    let json;
+    try {
+      json = JSON.parse(extracted);
+    } catch (parseErr) {
+      console.error('[conjugaison] JSON invalide:', parseErr.message, '\nTexte extrait complet :\n', extracted);
+      return res.status(500).json({ error: 'JSON invalide: ' + parseErr.message });
+    }
     return res.status(200).json(json);
 
   } catch (err) {

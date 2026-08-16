@@ -1,3 +1,5 @@
+import { extractJSON } from './_utils.js';
+
 const MODEL_SONNET = 'claude-sonnet-4-6';
 const MODEL_HAIKU = 'claude-haiku-4-5-20251001';
 
@@ -67,9 +69,19 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
     });
 
     const data = await response.json();
-    let texte = data.content[0].text.trim();
-    texte = texte.replace(/```json/g, '').replace(/```/g, '').trim();
-    const questions = JSON.parse(texte);
+    const rawText = data.content[0].text;
+    const extracted = extractJSON(rawText);
+    if (!extracted) {
+      console.error('[generate-test] Pas de JSON trouvé. Réponse brute complète :\n', rawText);
+      return res.status(500).json({ error: 'Pas de JSON dans la réponse' });
+    }
+    let questions;
+    try {
+      questions = JSON.parse(extracted);
+    } catch (parseErr) {
+      console.error('[generate-test] JSON invalide:', parseErr.message, '\nTexte extrait complet :\n', extracted);
+      return res.status(500).json({ error: 'JSON invalide: ' + parseErr.message });
+    }
     res.status(200).json({ questions, niveau });
 
   } catch (err) {
