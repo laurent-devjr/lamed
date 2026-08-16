@@ -58,12 +58,18 @@ Texte en ${nomAppris} :
         })
       });
       const data1 = await res1.json();
-      console.log(JSON.stringify(data1));
       const rawText = data1.content[0].text;
+
+      // ── Stop-reason check ────────────────────────────────────────────────
+      const stopReason = data1.stop_reason;
+      if (stopReason !== 'end_turn') {
+        console.error('[align] WARN stop_reason =', stopReason, '(possible truncation)');
+      }
+
       const jsonStart = rawText.indexOf('{');
       const jsonEnd = rawText.lastIndexOf('}');
       if (jsonStart === -1 || jsonEnd === -1) {
-        console.error('Pas de JSON trouvé dans:', rawText.substring(0, 300));
+        console.error('[align] Pas de JSON trouvé dans:', rawText.substring(0, 300));
         return res.status(500).json({ error: 'Pas de JSON dans la réponse' });
       }
       const cleanedText = rawText.slice(jsonStart, jsonEnd + 1);
@@ -71,13 +77,35 @@ Texte en ${nomAppris} :
       try {
         parsed = JSON.parse(cleanedText);
       } catch (parseErr) {
-        console.error('JSON invalide:', parseErr.message, '| Texte:', cleanedText.substring(0, 300));
+        console.error('[align] JSON invalide:', parseErr.message, '| Texte:', cleanedText.substring(0, 300));
         return res.status(500).json({ error: 'JSON invalide: ' + parseErr.message });
       }
       if (!Array.isArray(parsed.source) || !Array.isArray(parsed.cible) || !Array.isArray(parsed.liens)) {
-        console.error('Schéma inattendu:', JSON.stringify(parsed).substring(0, 200));
+        console.error('[align] Schéma inattendu:', JSON.stringify(parsed).substring(0, 200));
         return res.status(500).json({ error: 'Schéma de réponse invalide' });
       }
+
+      // ── Diagnostic logging ───────────────────────────────────────────────
+      const srcLen  = parsed.source.length;
+      const cibLen  = parsed.cible.length;
+      const nbLiens = parsed.liens.length;
+      console.log(`[align] tokens source=${srcLen}  cible=${cibLen}  liens=${nbLiens}  stop=${stopReason}`);
+
+      const invalidLinks = parsed.liens.filter(([si, ci]) =>
+        !Number.isInteger(si) || !Number.isInteger(ci) ||
+        si < 0 || si >= srcLen ||
+        ci < 0 || ci >= cibLen
+      );
+      if (invalidLinks.length > 0) {
+        console.error(
+          `[align] ${invalidLinks.length} lien(s) invalide(s) sur ${nbLiens}` +
+          ` | source.length=${srcLen} cible.length=${cibLen}` +
+          ` | fautifs:`, JSON.stringify(invalidLinks)
+        );
+      } else {
+        console.log('[align] Tous les liens sont dans les bornes.');
+      }
+
       return res.status(200).json(parsed);
 
     } catch (err) {
