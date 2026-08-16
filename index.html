@@ -335,6 +335,7 @@
     .seg:hover { background: #f0f0ee; }
     .seg.hl-primary { background: #faeeda; outline: 1px solid #ba7517; }
     .seg.hl-echo { background: #ede9f8; outline: 1px solid #7c3aed; }
+    .seg-null { display: inline; padding: 1px 3px; }
     .detail-bar { display: none; }
     .detail-bar.visible { display: inline-flex; }
     .btn-detail { font-size: 13px; padding: 7px 14px; background: #0891b2; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
@@ -528,9 +529,8 @@
 
 <script>
   let motActif = null;
-  let alignData = null;       // {source, cible, liens}
-  let activeClickSrc = null;  // index source verrouillé par un clic
-  let activeClickCible = null;
+  let alignData = null;    // {source: [{t,g},...], cible: [{t,g},...]}
+  let activeClickG = null; // g value verrouillé par un clic (null = aucun verrou)
   let motDetailCourant = null;
   let favoriId = null;
   let detailCourant = null;
@@ -705,8 +705,7 @@ async function chargerPortion(idx) {
   portionActive = idx;
   traductionChargee = false;
   alignData = null;
-  activeClickSrc = null;
-  activeClickCible = null;
+  activeClickG = null;
   document.getElementById('parallelHe').innerHTML = '';
   document.getElementById('parallelFr').innerHTML = '';
   document.getElementById('detailBar').classList.remove('visible');
@@ -734,9 +733,9 @@ async function lancerTraduction(texte) {
     const data = await response.json();
     console.log(data);
     if (data.error) throw new Error(data.error);
-    if (!Array.isArray(data.source) || !Array.isArray(data.cible) || !Array.isArray(data.liens))
+    if (!Array.isArray(data.source) || !Array.isArray(data.cible))
       throw new Error('Format de réponse invalide');
-    alignData = { source: data.source, cible: data.cible, liens: data.liens };
+    alignData = { source: data.source, cible: data.cible };
     // Update source column text direction
     const colSrc = document.getElementById('parallelHe');
     const srcIsRTL = RTL_LANGS.has(getLangues().langueApprise);
@@ -818,8 +817,7 @@ function nouveauTexte() {
   modeTraduction = false;
   document.getElementById('btnTraduction').textContent = 'Traduction';
   alignData = null;
-  activeClickSrc = null;
-  activeClickCible = null;
+  activeClickG = null;
   motDetailCourant = null;
   document.getElementById('parallelView').classList.remove('visible');
   document.getElementById('detailBar').classList.remove('visible');
@@ -906,50 +904,49 @@ function nouveauTexte() {
   }
 
 function renderParallel({ source, cible }) {
-  let srcHtml = '';
+  let srcHtml   = '';
   let cibleHtml = '';
-  source.forEach((tok, i) => {
-    if (tok === '\n') { srcHtml += '<br>'; return; }
-    srcHtml += '<span class="seg src-seg" data-src-idx="' + i + '"'
-      + ' onmouseenter="onSrcMouseenter(' + i + ')" onmouseleave="onParallelMouseleave()"'
-      + ' onclick="onClickSrc(' + i + ')">' + tok + '</span> ';
+
+  source.forEach(tok => {
+    if (tok.t === '\n') { srcHtml += '<br>'; return; }
+    if (tok.g != null) {
+      srcHtml += '<span class="seg" data-g="' + tok.g + '" data-side="src"'
+        + ' onmouseenter="onSegHover(this)" onmouseleave="onParallelMouseleave()"'
+        + ' onclick="onClickSrc(this)">' + tok.t + '</span> ';
+    } else {
+      // null-g source tokens: clickable for detail panel, no cross-highlight
+      srcHtml += '<span class="seg" onclick="onClickSrc(this)">' + tok.t + '</span> ';
+    }
   });
-  cible.forEach((tok, i) => {
-    if (tok === '\n') { cibleHtml += '<br>'; return; }
-    cibleHtml += '<span class="seg cible-seg" data-cible-idx="' + i + '"'
-      + ' onmouseenter="onCibleMouseenter(' + i + ')" onmouseleave="onParallelMouseleave()"'
-      + ' onclick="onClickCible(' + i + ')">' + tok + '</span> ';
+
+  cible.forEach(tok => {
+    if (tok.t === '\n') { cibleHtml += '<br>'; return; }
+    if (tok.g != null) {
+      cibleHtml += '<span class="seg" data-g="' + tok.g + '" data-side="cible"'
+        + ' onmouseenter="onSegHover(this)" onmouseleave="onParallelMouseleave()"'
+        + ' onclick="onClickCible(this)">' + tok.t + '</span> ';
+    } else {
+      cibleHtml += '<span class="seg-null">' + tok.t + '</span> ';
+    }
   });
-  document.getElementById('parallelHe').innerHTML = srcHtml;
-  document.getElementById('parallelFr').innerHTML = cibleHtml;
+
+  document.getElementById('parallelHe').innerHTML   = srcHtml;
+  document.getElementById('parallelFr').innerHTML   = cibleHtml;
 }
 
-// ── Alignment highlight helpers ────────────────────────────────────────────────
-function getSrcLinkedCible(si) {
-  if (!alignData) return [];
-  return alignData.liens.filter(([s]) => s === si).map(([, c]) => c);
-}
-function getCibleLinkedSrc(ci) {
-  if (!alignData) return [];
-  return alignData.liens.filter(([, c]) => c === ci).map(([s]) => s);
-}
+// ── Alignment highlight helpers ───────────────────────────────────────────────
 function clearHL() {
   document.querySelectorAll('.seg').forEach(el => el.classList.remove('hl-primary', 'hl-echo'));
 }
-function setHighlightSrc(si) {
+
+function highlightGroup(g, primaryEl) {
   clearHL();
-  document.querySelector('.src-seg[data-src-idx="' + si + '"]')?.classList.add('hl-primary');
-  getSrcLinkedCible(si).forEach(ci =>
-    document.querySelector('.cible-seg[data-cible-idx="' + ci + '"]')?.classList.add('hl-echo')
-  );
+  if (g == null) return;
+  document.querySelectorAll('.seg[data-g="' + g + '"]').forEach(el => {
+    el.classList.add(el === primaryEl ? 'hl-primary' : 'hl-echo');
+  });
 }
-function setHighlightCible(ci) {
-  clearHL();
-  document.querySelector('.cible-seg[data-cible-idx="' + ci + '"]')?.classList.add('hl-primary');
-  getCibleLinkedSrc(ci).forEach(si =>
-    document.querySelector('.src-seg[data-src-idx="' + si + '"]')?.classList.add('hl-echo')
-  );
-}
+
 function scrollToHL() {
   ['parallelHe', 'parallelFr'].forEach(colId => {
     const colEl = document.getElementById(colId);
@@ -960,32 +957,33 @@ function scrollToHL() {
     colEl.scrollTop = hlRect.top - colRect.top + colEl.scrollTop + hlRect.height / 2 - colEl.clientHeight / 2;
   });
 }
-function onSrcMouseenter(si) {
-  if (activeClickSrc !== null || activeClickCible !== null) return;
-  setHighlightSrc(si);
+
+function onSegHover(el) {
+  if (activeClickG !== null) return;
+  highlightGroup(el.dataset.g, el);
 }
-function onCibleMouseenter(ci) {
-  if (activeClickSrc !== null || activeClickCible !== null) return;
-  setHighlightCible(ci);
-}
+
 function onParallelMouseleave() {
-  if (activeClickSrc !== null || activeClickCible !== null) return;
+  if (activeClickG !== null) return;
   clearHL();
 }
-function onClickSrc(si) {
-  activeClickSrc = si;
-  activeClickCible = null;
-  setHighlightSrc(si);
-  motDetailCourant = alignData.source[si];
+
+function onClickSrc(el) {
+  const g = el.dataset.g != null ? el.dataset.g : null;
+  activeClickG = g;
+  highlightGroup(g, el);
+  motDetailCourant = el.textContent.trim();
   document.getElementById('detailBar').classList.add('visible');
   scrollToHL();
 }
-function onClickCible(ci) {
-  activeClickCible = ci;
-  activeClickSrc = null;
-  setHighlightCible(ci);
-  const linked = getCibleLinkedSrc(ci);
-  motDetailCourant = linked.length > 0 ? alignData.source[linked[0]] : null;
+
+function onClickCible(el) {
+  const g = el.dataset.g != null ? el.dataset.g : null;
+  activeClickG = g;
+  highlightGroup(g, el);
+  // Resolve motDetailCourant from the linked source span
+  const srcSpan = g ? document.querySelector('.seg[data-g="' + g + '"][data-side="src"]') : null;
+  motDetailCourant = srcSpan ? srcSpan.textContent.trim() : null;
   if (motDetailCourant) document.getElementById('detailBar').classList.add('visible');
   else document.getElementById('detailBar').classList.remove('visible');
   scrollToHL();

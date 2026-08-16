@@ -1,3 +1,5 @@
+import { extractJSON } from './_utils.js';
+
 const MODEL_SONNET = 'claude-sonnet-4-6';
 const MODEL_HAIKU = 'claude-haiku-4-5-20251001';
 
@@ -35,23 +37,21 @@ export default async function handler(req, res) {
           max_tokens: 8000,
           messages: [{ role: 'user', content: `Tu es un traducteur expert en ${nomAppris} et en ${nomNatif}.
 
-Effectue la tâche en deux étapes :
+TÂCHE : traduis le texte ci-dessous en ${nomNatif}, puis retourne un JSON d'alignement token par token.
 
-ÉTAPE 1 — Produis une traduction naturelle et fluide du texte ci-dessous en ${nomNatif}. Respecte l'ordre des mots propre à la langue cible ; ne te laisse jamais contraindre par l'ordre de la langue source. La traduction doit être de qualité littéraire.
+RÈGLE FONDAMENTALE — ordre des mots : ta traduction doit être naturelle et fluide en ${nomNatif}. L'ordre des mots de la cible est entièrement libre ; ne te laisse jamais contraindre par l'ordre de la langue source.
 
-ÉTAPE 2 — En te basant sur la traduction que tu viens de produire, découpe le texte source en tokens et ta traduction en tokens, puis établis les liens d'alignement.
+RÈGLE FONDAMENTALE — identifiant de groupe "g" : chaque token reçoit un entier "g" qui identifie sa correspondance sémantique. Tu attribues "g" AU MOMENT OÙ TU ÉCRIS CHAQUE TOKEN — jamais a posteriori, jamais en comptant les positions. Puisque c'est toi qui traduis, tu sais immédiatement quel mot source correspond à quel mot cible ; tu leur donnes simplement le même "g". Tu n'as jamais à chercher ni à compter.
 
-Règles strictes :
-- "source" = tableau de tokens du texte en ${nomAppris}, dans l'ordre original du texte source.
-- "cible" = tableau de tokens de ta traduction en ${nomNatif}, dans l'ordre naturel de la langue cible (peut différer de l'ordre source).
-- "liens" = liste de paires [indexSource, indexCible]. Un même index peut apparaître plusieurs fois (relations 1→N et N→1 autorisées). Un token sans équivalent direct n'a simplement aucun lien.
-- Les sauts de ligne sont des tokens "\\n" présents dans les deux tableaux à leur position respective.
-- La ponctuation reste attachée au mot qui la précède (un seul token).
+Format de chaque token : {"t": "texte", "g": entier_ou_null}
+- "t" = le mot ou signe de ponctuation (la ponctuation reste attachée au mot qui la précède)
+- "g" = entier ≥ 1, partagé entre les tokens correspondants des deux langues ; null si aucune correspondance directe
+- Plusieurs tokens peuvent partager le même "g" (relations N→M autorisées)
+- Les sauts de ligne sont des tokens {"t": "\\n", "g": null} dans les deux tableaux
 
-IMPORTANT : la fluidité et le naturel de la traduction priment sur la facilité d'alignement. Les liens sont établis APRÈS la traduction — ne sacrifie jamais la qualité de la traduction pour simplifier l'alignement.
+CONTRAINTE ABSOLUE : réponds UNIQUEMENT avec l'objet JSON — rien avant {, rien après }. Aucun backtick, aucun commentaire, aucune explication.
 
-Retourne UNIQUEMENT ce JSON sans commentaire ni backtick :
-{"source":["tok1","tok2",...],"cible":["tok1","tok2",...],"liens":[[0,1],[2,0],...]}
+{"source":[{"t":"mot","g":1},{"t":"\\n","g":null}],"cible":[{"t":"mot","g":1},{"t":"\\n","g":null}]}
 
 Texte en ${nomAppris} :
 ` + texte }]
@@ -66,45 +66,46 @@ Texte en ${nomAppris} :
         console.error('[align] WARN stop_reason =', stopReason, '(possible truncation)');
       }
 
-      const jsonStart = rawText.indexOf('{');
-      const jsonEnd = rawText.lastIndexOf('}');
-      if (jsonStart === -1 || jsonEnd === -1) {
-        console.error('[align] Pas de JSON trouvé dans:', rawText.substring(0, 300));
+      const extracted = extractJSON(rawText);
+      if (!extracted) {
+        console.error('[align] Pas de JSON trouvé. Réponse brute complète :\n', rawText);
         return res.status(500).json({ error: 'Pas de JSON dans la réponse' });
       }
-      const cleanedText = rawText.slice(jsonStart, jsonEnd + 1);
       let parsed;
       try {
-        parsed = JSON.parse(cleanedText);
+        parsed = JSON.parse(extracted);
       } catch (parseErr) {
-        console.error('[align] JSON invalide:', parseErr.message, '| Texte:', cleanedText.substring(0, 300));
+        console.error('[align] JSON invalide:', parseErr.message, '\nTexte extrait complet :\n', extracted);
         return res.status(500).json({ error: 'JSON invalide: ' + parseErr.message });
       }
-      if (!Array.isArray(parsed.source) || !Array.isArray(parsed.cible) || !Array.isArray(parsed.liens)) {
-        console.error('[align] Schéma inattendu:', JSON.stringify(parsed).substring(0, 200));
+      if (!Array.isArray(parsed.source) || !Array.isArray(parsed.cible)) {
+        console.error('[align] Schéma inattendu:', JSON.stringify(parsed).substring(0, 300));
         return res.status(500).json({ error: 'Schéma de réponse invalide' });
       }
 
-      // ── Diagnostic logging ───────────────────────────────────────────────
-      const srcLen  = parsed.source.length;
-      const cibLen  = parsed.cible.length;
-      const nbLiens = parsed.liens.length;
-      console.log(`[align] tokens source=${srcLen}  cible=${cibLen}  liens=${nbLiens}  stop=${stopReason}`);
+      // ── Diagnostic & orphan detection ────────────────────────────────────
+      const srcLen = parsed.source.length;
+      const cibLen = parsed.cible.length;
 
-      const invalidLinks = parsed.liens.filter(([si, ci]) =>
-        !Number.isInteger(si) || !Number.isInteger(ci) ||
-        si < 0 || si >= srcLen ||
-        ci < 0 || ci >= cibLen
-      );
-      if (invalidLinks.length > 0) {
-        console.error(
-          `[align] ${invalidLinks.length} lien(s) invalide(s) sur ${nbLiens}` +
-          ` | source.length=${srcLen} cible.length=${cibLen}` +
-          ` | fautifs:`, JSON.stringify(invalidLinks)
-        );
+      const srcGs = new Set(parsed.source.map(t => t.g).filter(g => g != null));
+      const cibGs = new Set(parsed.cible.map(t => t.g).filter(g => g != null));
+      const allGs = new Set([...srcGs, ...cibGs]);
+
+      const orphansSrc = [...srcGs].filter(g => !cibGs.has(g));
+      const orphansCib = [...cibGs].filter(g => !srcGs.has(g));
+
+      console.log(`[align] source=${srcLen}  cible=${cibLen}  groupes=${allGs.size}  stop=${stopReason}`);
+      if (orphansSrc.length > 0 || orphansCib.length > 0) {
+        console.error('[align] g orphelins — src sans cible:', orphansSrc, '| cible sans src:', orphansCib);
       } else {
-        console.log('[align] Tous les liens sont dans les bornes.');
+        console.log('[align] Tous les g sont appariés.');
       }
+
+      parsed._debug = {
+        srcLen, cibLen, nbGroupes: allGs.size,
+        orphelins: { source: orphansSrc, cible: orphansCib },
+        stopReason
+      };
 
       return res.status(200).json(parsed);
 
