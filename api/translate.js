@@ -33,19 +33,25 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           model: MODEL_SONNET,
           max_tokens: 8000,
-          messages: [{ role: 'user', content: `Tu es un traducteur expert en ${nomAppris} et en ${nomNatif}. Traduis le texte en ${nomAppris} ci-dessous en ${nomNatif} de qualité littéraire (fidèle au sens, style naturel et fluide), puis retourne IMMÉDIATEMENT les segments alignés mot-à-mot entre ta traduction et le texte source.
+          messages: [{ role: 'user', content: `Tu es un traducteur expert en ${nomAppris} et en ${nomNatif}.
 
-Puisque tu produis toi-même la traduction, tu connais exactement les correspondances — exploite cela pour un alignement précis.
+Effectue la tâche en deux étapes :
 
-Règles d'alignement :
-- Chaque segment = 1 mot si possible (source et traduction).
-- Exception uniquement si indissociable : nom propre, expression figée, ou mot nécessitant plusieurs mots dans l'autre langue.
-- Préserve EXACTEMENT tous les sauts de ligne du texte original : chaque saut de ligne devient {"he":"\\n","fr":"\\n"}.
+ÉTAPE 1 — Produis une traduction naturelle et fluide du texte ci-dessous en ${nomNatif}. Respecte l'ordre des mots propre à la langue cible ; ne te laisse jamais contraindre par l'ordre de la langue source. La traduction doit être de qualité littéraire.
+
+ÉTAPE 2 — En te basant sur la traduction que tu viens de produire, découpe le texte source en tokens et ta traduction en tokens, puis établis les liens d'alignement.
+
+Règles strictes :
+- "source" = tableau de tokens du texte en ${nomAppris}, dans l'ordre original du texte source.
+- "cible" = tableau de tokens de ta traduction en ${nomNatif}, dans l'ordre naturel de la langue cible (peut différer de l'ordre source).
+- "liens" = liste de paires [indexSource, indexCible]. Un même index peut apparaître plusieurs fois (relations 1→N et N→1 autorisées). Un token sans équivalent direct n'a simplement aucun lien.
+- Les sauts de ligne sont des tokens "\\n" présents dans les deux tableaux à leur position respective.
+- La ponctuation reste attachée au mot qui la précède (un seul token).
+
+IMPORTANT : la fluidité et le naturel de la traduction priment sur la facilité d'alignement. Les liens sont établis APRÈS la traduction — ne sacrifie jamais la qualité de la traduction pour simplifier l'alignement.
 
 Retourne UNIQUEMENT ce JSON sans commentaire ni backtick :
-{"segments":[{"he":"...","fr":"..."},...]}
-
-(Le champ "he" contient le mot en ${nomAppris}, le champ "fr" contient le mot en ${nomNatif}.)
+{"source":["tok1","tok2",...],"cible":["tok1","tok2",...],"liens":[[0,1],[2,0],...]}
 
 Texte en ${nomAppris} :
 ` + texte }]
@@ -67,6 +73,10 @@ Texte en ${nomAppris} :
       } catch (parseErr) {
         console.error('JSON invalide:', parseErr.message, '| Texte:', cleanedText.substring(0, 300));
         return res.status(500).json({ error: 'JSON invalide: ' + parseErr.message });
+      }
+      if (!Array.isArray(parsed.source) || !Array.isArray(parsed.cible) || !Array.isArray(parsed.liens)) {
+        console.error('Schéma inattendu:', JSON.stringify(parsed).substring(0, 200));
+        return res.status(500).json({ error: 'Schéma de réponse invalide' });
       }
       return res.status(200).json(parsed);
 

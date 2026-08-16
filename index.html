@@ -528,7 +528,9 @@
 
 <script>
   let motActif = null;
-  let segmentsData = null;
+  let alignData = null;       // {source, cible, liens}
+  let activeClickSrc = null;  // index source verrouillé par un clic
+  let activeClickCible = null;
   let motDetailCourant = null;
   let favoriId = null;
   let detailCourant = null;
@@ -702,7 +704,9 @@ function afficherBoutonsPortion() {
 async function chargerPortion(idx) {
   portionActive = idx;
   traductionChargee = false;
-  segmentsData = null;
+  alignData = null;
+  activeClickSrc = null;
+  activeClickCible = null;
   document.getElementById('parallelHe').innerHTML = '';
   document.getElementById('parallelFr').innerHTML = '';
   document.getElementById('detailBar').classList.remove('visible');
@@ -730,9 +734,15 @@ async function lancerTraduction(texte) {
     const data = await response.json();
     console.log(data);
     if (data.error) throw new Error(data.error);
-    segmentsData = data.segments;
-    if (!segmentsData || !Array.isArray(segmentsData)) throw new Error('Format de réponse invalide');
-    renderParallel(segmentsData);
+    if (!Array.isArray(data.source) || !Array.isArray(data.cible) || !Array.isArray(data.liens))
+      throw new Error('Format de réponse invalide');
+    alignData = { source: data.source, cible: data.cible, liens: data.liens };
+    // Update source column text direction
+    const colSrc = document.getElementById('parallelHe');
+    const srcIsRTL = RTL_LANGS.has(getLangues().langueApprise);
+    colSrc.style.direction = srcIsRTL ? 'rtl' : 'ltr';
+    colSrc.style.textAlign  = srcIsRTL ? 'right' : 'left';
+    renderParallel(alignData);
     traductionChargee = true;
   } catch (err) {
     document.getElementById('parallelFr').innerHTML = '<em style="color:red">Erreur : ' + err.message + '</em>';
@@ -807,7 +817,9 @@ function nouveauTexte() {
   traductionChargee = false;
   modeTraduction = false;
   document.getElementById('btnTraduction').textContent = 'Traduction';
-  segmentsData = null;
+  alignData = null;
+  activeClickSrc = null;
+  activeClickCible = null;
   motDetailCourant = null;
   document.getElementById('parallelView').classList.remove('visible');
   document.getElementById('detailBar').classList.remove('visible');
@@ -893,40 +905,90 @@ function nouveauTexte() {
     }
   }
 
-function renderParallel(segments) {
-  let heHtml = '';
-  let frHtml = '';
-  segments.forEach((seg, i) => {
-    if (seg.he === '\n' || seg.fr === '\n') {
-      heHtml += '<br>';
-      frHtml += '<br>';
-    } else {
-      heHtml += '<span class="seg" data-idx="' + i + '" onclick="surlignerSegment(' + i + ', \'he\')">' + seg.he + '</span> ';
-      frHtml += '<span class="seg" data-idx="' + i + '" onclick="surlignerSegment(' + i + ', \'fr\')">' + seg.fr + '</span> ';
-    }
+function renderParallel({ source, cible }) {
+  let srcHtml = '';
+  let cibleHtml = '';
+  source.forEach((tok, i) => {
+    if (tok === '\n') { srcHtml += '<br>'; return; }
+    srcHtml += '<span class="seg src-seg" data-src-idx="' + i + '"'
+      + ' onmouseenter="onSrcMouseenter(' + i + ')" onmouseleave="onParallelMouseleave()"'
+      + ' onclick="onClickSrc(' + i + ')">' + tok + '</span> ';
   });
-  document.getElementById('parallelHe').innerHTML = heHtml;
-  document.getElementById('parallelFr').innerHTML = frHtml;
+  cible.forEach((tok, i) => {
+    if (tok === '\n') { cibleHtml += '<br>'; return; }
+    cibleHtml += '<span class="seg cible-seg" data-cible-idx="' + i + '"'
+      + ' onmouseenter="onCibleMouseenter(' + i + ')" onmouseleave="onParallelMouseleave()"'
+      + ' onclick="onClickCible(' + i + ')">' + tok + '</span> ';
+  });
+  document.getElementById('parallelHe').innerHTML = srcHtml;
+  document.getElementById('parallelFr').innerHTML = cibleHtml;
 }
 
-function surlignerSegment(idx, col) {
+// ── Alignment highlight helpers ────────────────────────────────────────────────
+function getSrcLinkedCible(si) {
+  if (!alignData) return [];
+  return alignData.liens.filter(([s]) => s === si).map(([, c]) => c);
+}
+function getCibleLinkedSrc(ci) {
+  if (!alignData) return [];
+  return alignData.liens.filter(([, c]) => c === ci).map(([s]) => s);
+}
+function clearHL() {
   document.querySelectorAll('.seg').forEach(el => el.classList.remove('hl-primary', 'hl-echo'));
-  document.querySelectorAll('.seg[data-idx="' + idx + '"]').forEach(el => {
-    const dansColCliquee = el.closest('.col-' + col) !== null;
-    el.classList.add(dansColCliquee ? 'hl-primary' : 'hl-echo');
-  });
-  if (segmentsData && segmentsData[idx]) motDetailCourant = segmentsData[idx].he;
-  document.getElementById('detailBar').classList.add('visible');
-
+}
+function setHighlightSrc(si) {
+  clearHL();
+  document.querySelector('.src-seg[data-src-idx="' + si + '"]')?.classList.add('hl-primary');
+  getSrcLinkedCible(si).forEach(ci =>
+    document.querySelector('.cible-seg[data-cible-idx="' + ci + '"]')?.classList.add('hl-echo')
+  );
+}
+function setHighlightCible(ci) {
+  clearHL();
+  document.querySelector('.cible-seg[data-cible-idx="' + ci + '"]')?.classList.add('hl-primary');
+  getCibleLinkedSrc(ci).forEach(si =>
+    document.querySelector('.src-seg[data-src-idx="' + si + '"]')?.classList.add('hl-echo')
+  );
+}
+function scrollToHL() {
   ['parallelHe', 'parallelFr'].forEach(colId => {
     const colEl = document.getElementById(colId);
     const hl = colEl.querySelector('.hl-primary, .hl-echo');
     if (!hl) return;
     const colRect = colEl.getBoundingClientRect();
-    const hlRect = hl.getBoundingClientRect();
-    const hlCenter = hlRect.top - colRect.top + colEl.scrollTop + hlRect.height / 2;
-    colEl.scrollTop = hlCenter - colEl.clientHeight / 2;
+    const hlRect  = hl.getBoundingClientRect();
+    colEl.scrollTop = hlRect.top - colRect.top + colEl.scrollTop + hlRect.height / 2 - colEl.clientHeight / 2;
   });
+}
+function onSrcMouseenter(si) {
+  if (activeClickSrc !== null || activeClickCible !== null) return;
+  setHighlightSrc(si);
+}
+function onCibleMouseenter(ci) {
+  if (activeClickSrc !== null || activeClickCible !== null) return;
+  setHighlightCible(ci);
+}
+function onParallelMouseleave() {
+  if (activeClickSrc !== null || activeClickCible !== null) return;
+  clearHL();
+}
+function onClickSrc(si) {
+  activeClickSrc = si;
+  activeClickCible = null;
+  setHighlightSrc(si);
+  motDetailCourant = alignData.source[si];
+  document.getElementById('detailBar').classList.add('visible');
+  scrollToHL();
+}
+function onClickCible(ci) {
+  activeClickCible = ci;
+  activeClickSrc = null;
+  setHighlightCible(ci);
+  const linked = getCibleLinkedSrc(ci);
+  motDetailCourant = linked.length > 0 ? alignData.source[linked[0]] : null;
+  if (motDetailCourant) document.getElementById('detailBar').classList.add('visible');
+  else document.getElementById('detailBar').classList.remove('visible');
+  scrollToHL();
 }
 
 async function ouvrirDetail() {
