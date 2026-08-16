@@ -379,9 +379,16 @@
     .lang-sel:focus { outline: none; border-color: #6366f1; }
     .lang-sep { color: #d4d0eb; font-size: 14px; }
 
-    /* LANGUAGE DETECTION TOAST */
-    .lang-toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1c1917; color: white; padding: 9px 18px; border-radius: 20px; font-size: 13px; z-index: 999; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 0.35s; }
-    .lang-toast.visible { opacity: 1; }
+    /* LANGUAGE DETECTION BANNER */
+    .lang-banner { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1c1917; color: white; padding: 10px 12px 10px 16px; border-radius: 12px; font-size: 13px; z-index: 999; display: flex; align-items: center; gap: 10px; pointer-events: all; opacity: 0; transition: opacity 0.35s; max-width: calc(100vw - 32px); box-shadow: 0 4px 20px rgba(0,0,0,0.25); }
+    .lang-banner.visible { opacity: 1; }
+    .lang-banner-text { flex: 1; min-width: 0; }
+    .lang-banner-btn { background: #6366f1; color: white; border: none; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap; flex-shrink: 0; line-height: 1.4; }
+    .lang-banner-btn:hover { background: #4f46e5; }
+    @media (max-width: 700px) {
+      .lang-banner { flex-direction: column; align-items: stretch; bottom: 72px; gap: 8px; }
+      .lang-banner-btn { text-align: center; padding: 8px 12px; }
+    }
 
     /* MOBILE HEADER — hidden on desktop */
     .lang-pill-btn { display: none; align-items: center; gap: 3px; padding: 5px 10px; background: #ede9fe; border: none; border-radius: 20px; font-size: 12px; font-weight: 600; color: #4f46e5; cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap; line-height: 1; }
@@ -1409,18 +1416,21 @@ function srcDirStyle() {
 
 // ── Language auto-detection ───────────────────────────────────────────────────
 
-let langDetectBlocked = false;
+// Tracks the textarea content when the user last manually changed the selector.
+// Detection is skipped only for that exact text; any change re-enables it.
+let langDetectBlockedText = null;
 let detectTimer = null;
 const LANG_DETECT_SUPPORTED = new Set(['he', 'en', 'es', 'de', 'it', 'pt', 'ar', 'ru', 'ja', 'zh']);
+// Languages that can be set as native (matches the langNative <select> options)
+const LANG_NATIVE_OPTS = new Set(['fr', 'en', 'es', 'de', 'it', 'pt']);
 
 function detectScriptLocal(text) {
-  // Strip whitespace, ASCII digits and ASCII punctuation — keep only letters
   const chars = [...text].filter(c => {
     const cp = c.codePointAt(0);
-    if (cp <= 0x20) return false;                                                  // ctrl + space
-    if (cp >= 0x30 && cp <= 0x39) return false;                                   // 0–9
+    if (cp <= 0x20) return false;
+    if (cp >= 0x30 && cp <= 0x39) return false;
     if ((cp >= 0x21 && cp <= 0x2F) || (cp >= 0x3A && cp <= 0x40)
-      || (cp >= 0x5B && cp <= 0x60) || (cp >= 0x7B && cp <= 0x7E)) return false; // ASCII punct
+      || (cp >= 0x5B && cp <= 0x60) || (cp >= 0x7B && cp <= 0x7E)) return false;
     return true;
   });
   if (chars.length < 5) return null;
@@ -1429,36 +1439,32 @@ function detectScriptLocal(text) {
   for (const c of chars) {
     const cp = c.codePointAt(0);
     if ((cp >= 0x41 && cp <= 0x5A) || (cp >= 0x61 && cp <= 0x7A)
-      || (cp >= 0xC0 && cp <= 0x024F)) latin++;          // Basic + extended Latin
-    else if (cp >= 0x0590 && cp <= 0x05FF) he++;          // Hebrew
-    else if (cp >= 0x0600 && cp <= 0x06FF) ar++;          // Arabic / Persian
-    else if (cp >= 0x0400 && cp <= 0x04FF) ru++;          // Cyrillic
-    else if (cp >= 0x0370 && cp <= 0x03FF) el++;          // Greek
-    else if (cp >= 0x3040 && cp <= 0x30FF) kana++;        // Hiragana + Katakana (Japanese only)
-    else if (cp >= 0x4E00 && cp <= 0x9FFF) cjk++;         // CJK (shared)
-    else if (cp >= 0xAC00 && cp <= 0xD7AF) ko++;          // Hangul (Korean)
+      || (cp >= 0xC0 && cp <= 0x024F)) latin++;
+    else if (cp >= 0x0590 && cp <= 0x05FF) he++;
+    else if (cp >= 0x0600 && cp <= 0x06FF) ar++;
+    else if (cp >= 0x0400 && cp <= 0x04FF) ru++;
+    else if (cp >= 0x0370 && cp <= 0x03FF) el++;
+    else if (cp >= 0x3040 && cp <= 0x30FF) kana++;
+    else if (cp >= 0x4E00 && cp <= 0x9FFF) cjk++;
+    else if (cp >= 0xAC00 && cp <= 0xD7AF) ko++;
   }
-
   const total = chars.length;
-  const pct   = key => ({ latin, he, ar, ru, el, kana, cjk, ko }[key] / total);
-
-  if (pct('he')   >= 0.25) return 'he';
-  if (pct('ar')   >= 0.25) return 'ar';
-  if (pct('ru')   >= 0.25) return 'ru';
-  if (pct('el')   >= 0.25) return 'el';   // Greek — unsupported, caller handles
-  if (pct('ko')   >= 0.25) return 'ko';   // Korean — unsupported, caller handles
-  if (pct('kana') >= 0.15) return 'ja';   // Hiragana/Katakana → Japanese
-  if (pct('cjk')  >= 0.25) return kana > 0 ? 'ja' : 'zh';
+  const pct = key => ({ latin, he, ar, ru, el, kana, cjk, ko }[key] / total);
+  if (pct('he')    >= 0.25) return 'he';
+  if (pct('ar')    >= 0.25) return 'ar';
+  if (pct('ru')    >= 0.25) return 'ru';
+  if (pct('el')    >= 0.25) return 'el';
+  if (pct('ko')    >= 0.25) return 'ko';
+  if (pct('kana')  >= 0.15) return 'ja';
+  if (pct('cjk')   >= 0.25) return kana > 0 ? 'ja' : 'zh';
   if (pct('latin') >= 0.25) return 'latin';
   return null;
 }
 
 async function detectLangue(texte) {
   const local = detectScriptLocal(texte);
-  if (!local || local === 'el' || local === 'ko') return null; // unknown or unsupported script
+  if (!local || local === 'el' || local === 'ko') return null;
   if (local !== 'latin') return local;
-
-  // Latin text — need API to distinguish en/fr/es/de/…
   try {
     const resp = await fetch('/api/detect-lang', {
       method: 'POST',
@@ -1468,13 +1474,11 @@ async function detectLangue(texte) {
     if (!resp.ok) return null;
     const data = await resp.json();
     return data.langue || null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 async function detectAndApplyLang(texte) {
-  if (langDetectBlocked || texte.length < 20) return;
+  if (texte.length < 20 || texte === langDetectBlockedText) return;
 
   const detected = await detectLangue(texte);
   if (!detected) return;
@@ -1482,48 +1486,78 @@ async function detectAndApplyLang(texte) {
   const current = document.getElementById('langApprise').value;
   const native  = document.getElementById('langNative').value;
 
-  if (detected === current) return; // already correct
+  if (detected === current) return; // already set, nothing to propose
+
+  const detectedName = LANG_FR_NAMES[detected] || detected;
+  const currentName  = LANG_FR_NAMES[current]  || current;
 
   if (detected === native) {
-    afficherToast('Ce texte semble déjà en ' + (LANG_FR_NAMES[detected] || detected) + ' (votre langue de traduction)');
+    // Text is in the native language → propose inversion
+    if (LANG_NATIVE_OPTS.has(current)) {
+      // Full swap possible: apprise ↔ native
+      afficherBanner(
+        'Ce texte semble être en ' + detectedName + '.',
+        'Traduire du ' + detectedName + ' vers le ' + currentName,
+        () => {
+          document.getElementById('langApprise').value = detected;
+          document.getElementById('langNative').value  = current;
+          onLangChange();
+        }
+      );
+    } else {
+      // current apprise (e.g. Hebrew) can't be set as native → just switch reading lang
+      afficherBanner(
+        'Ce texte semble être en ' + detectedName + '.',
+        'Lire en ' + detectedName,
+        () => {
+          document.getElementById('langApprise').value = detected;
+          onLangChange();
+        }
+      );
+    }
     return;
   }
 
-  if (!LANG_DETECT_SUPPORTED.has(detected)) return; // unsupported, fail silently
+  if (!LANG_DETECT_SUPPORTED.has(detected)) return;
 
-  // Apply without going through onLangChange() so we don't set langDetectBlocked
-  document.getElementById('langApprise').value = detected;
-  const mA = document.getElementById('mLangApprise');
-  if (mA) mA.value = detected;
-  localStorage.setItem('lamed_lang_apprise', detected);
-  applyLangSettings();
-  updateLangPill();
-
-  afficherToast('Langue détectée : ' + (LANG_FR_NAMES[detected] || detected));
+  afficherBanner(
+    'Ce texte semble être en ' + detectedName + '.',
+    'Passer en ' + detectedName,
+    () => {
+      document.getElementById('langApprise').value = detected;
+      onLangChange();
+    }
+  );
 }
 
 function scheduleDetection(texte) {
   clearTimeout(detectTimer);
-  if (texte.length < 20) {
-    langDetectBlocked = false; // text cleared → re-enable detection
-    return;
-  }
-  if (langDetectBlocked) return;
+  if (texte.length < 20 || texte === langDetectBlockedText) return;
   detectTimer = setTimeout(() => detectAndApplyLang(texte), 1200);
 }
 
-function afficherToast(msg) {
-  let toast = document.getElementById('langToast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'langToast';
-    toast.className = 'lang-toast';
-    document.body.appendChild(toast);
+function afficherBanner(msg, btnLabel, onBtnClick) {
+  let banner = document.getElementById('langBanner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'langBanner';
+    banner.className = 'lang-banner';
+    banner.innerHTML = '<span class="lang-banner-text" id="langBannerText"></span>'
+      + '<button class="lang-banner-btn" id="langBannerBtn"></button>';
+    document.body.appendChild(banner);
   }
-  toast.textContent = msg;
-  toast.classList.add('visible');
-  clearTimeout(toast._t);
-  toast._t = setTimeout(() => toast.classList.remove('visible'), 3500);
+  document.getElementById('langBannerText').textContent = msg;
+  const btn = document.getElementById('langBannerBtn');
+  btn.textContent = btnLabel;
+  btn.onclick = () => { onBtnClick(); fermerBanner(); };
+  banner.classList.add('visible');
+  clearTimeout(banner._t);
+  banner._t = setTimeout(fermerBanner, 5500);
+}
+
+function fermerBanner() {
+  const b = document.getElementById('langBanner');
+  if (b) b.classList.remove('visible');
 }
 
 function updateLangPill() {
@@ -1579,7 +1613,8 @@ document.addEventListener('click', function (e) {
 });
 
 function onLangChange() {
-  langDetectBlocked = true; // user manually chose — stop auto-detection on current text
+  // Block re-detection for the exact text currently in the textarea
+  langDetectBlockedText = document.getElementById('input')?.value ?? null;
   const apprise = document.getElementById('langApprise').value;
   const native  = document.getElementById('langNative').value;
   localStorage.setItem('lamed_lang_apprise', apprise);
