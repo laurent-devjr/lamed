@@ -763,6 +763,16 @@ function positionParallelView() {
   parallelView.style.borderRadius = '0 0 12px 12px';
 }
 
+// Repositionne .parallel-view dès que la hauteur/largeur réelle de la toolbar change
+// (bouton détail, nombre de parties, longueur des libellés de langue...) — se déclenche
+// après que le layout a effectivement changé, contrairement à un appel juste après un
+// classList.add qui peut mesurer une valeur pas encore à jour.
+const parallelToolbarObserver = new ResizeObserver(() => positionParallelView());
+parallelToolbarObserver.observe(document.querySelector('.text-toolbar'));
+
+window.addEventListener('resize', positionParallelView);
+window.addEventListener('orientationchange', () => requestAnimationFrame(positionParallelView));
+
 async function lancerTraduction(texte) {
   const parallelView = document.getElementById('parallelView');
   parallelView.classList.add('visible');
@@ -1120,7 +1130,6 @@ function onClickSrc(el) {
   highlightGroup(g, el);
   motDetailCourant = el.textContent.trim();
   document.getElementById('detailBar').classList.add('visible');
-  positionParallelView();
   scrollCorrespondentIntoView(g, 'src');
 }
 
@@ -1132,7 +1141,6 @@ function onClickCible(el) {
   motDetailCourant = srcSpan ? srcSpan.textContent.trim() : null;
   if (motDetailCourant) document.getElementById('detailBar').classList.add('visible');
   else document.getElementById('detailBar').classList.remove('visible');
-  positionParallelView();
   scrollCorrespondentIntoView(g, 'cible');
 }
 
