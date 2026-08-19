@@ -752,15 +752,21 @@ async function chargerPortion(idx) {
   await lancerTraduction(portions[idx]);
 }
 
-async function lancerTraduction(texte) {
+function positionParallelView() {
   const parallelView = document.getElementById('parallelView');
-  parallelView.classList.add('visible');
+  if (!parallelView.classList.contains('visible')) return;
   const toolbarRect = document.querySelector('.text-toolbar').getBoundingClientRect();
   parallelView.style.top = toolbarRect.bottom + 8 + 'px';
   const cardRect = document.getElementById('textCard').getBoundingClientRect();
   parallelView.style.left = cardRect.left + 'px';
   parallelView.style.right = (window.innerWidth - cardRect.right) + 'px';
   parallelView.style.borderRadius = '0 0 12px 12px';
+}
+
+async function lancerTraduction(texte) {
+  const parallelView = document.getElementById('parallelView');
+  parallelView.classList.add('visible');
+  positionParallelView();
   document.getElementById('parallelFr').innerHTML = '<em style="color:#aaa">Traduction en cours...</em>';
   document.getElementById('parallelHe').innerHTML = '';
   try {
@@ -1114,6 +1120,7 @@ function onClickSrc(el) {
   highlightGroup(g, el);
   motDetailCourant = el.textContent.trim();
   document.getElementById('detailBar').classList.add('visible');
+  positionParallelView();
   scrollCorrespondentIntoView(g, 'src');
 }
 
@@ -1125,6 +1132,7 @@ function onClickCible(el) {
   motDetailCourant = srcSpan ? srcSpan.textContent.trim() : null;
   if (motDetailCourant) document.getElementById('detailBar').classList.add('visible');
   else document.getElementById('detailBar').classList.remove('visible');
+  positionParallelView();
   scrollCorrespondentIntoView(g, 'cible');
 }
 
