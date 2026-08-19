@@ -388,13 +388,9 @@
     .auth-toggle { font-size: 12px; color: #78716c; text-align: center; }
     .auth-toggle a { color: #6366f1; text-decoration: none; font-weight: 500; }
     .auth-toggle a:hover { text-decoration: underline; }
-    /* LANGUAGE SELECTORS */
-    .lang-selectors { display: flex; align-items: center; gap: 6px; }
-    .lang-sel-group { display: flex; align-items: center; gap: 4px; }
-    .lang-sel-label { font-size: 10px; color: #a8a29e; font-weight: 500; white-space: nowrap; }
+    /* LANGUAGE SELECT (utilisé dans le lang-sheet) */
     .lang-sel { font-size: 11px; padding: 4px 8px; border-radius: 7px; border: 0.5px solid #e4e2f0; background: white; color: #3730a3; font-weight: 500; font-family: 'Inter', sans-serif; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23a8a29e'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 6px center; padding-right: 20px; }
     .lang-sel:focus { outline: none; border-color: #6366f1; }
-    .lang-sep { color: #d4d0eb; font-size: 14px; }
 
     /* LANGUAGE DETECTION BANNER */
     .lang-banner { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1c1917; color: white; padding: 10px 12px 10px 16px; border-radius: 12px; font-size: 13px; z-index: 999; display: flex; align-items: center; gap: 10px; pointer-events: all; opacity: 0; transition: opacity 0.35s; max-width: calc(100vw - 32px); box-shadow: 0 4px 20px rgba(0,0,0,0.25); }
@@ -411,15 +407,16 @@
       .lang-banner-btn { text-align: center; padding: 8px 12px; }
     }
 
-    /* MOBILE HEADER — hidden on desktop */
-    .lang-pill-btn { display: none; align-items: center; gap: 3px; padding: 5px 10px; background: #ede9fe; border: none; border-radius: 20px; font-size: 12px; font-weight: 600; color: #4f46e5; cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap; line-height: 1; }
+    /* Pastille de langue — visible desktop + mobile, ouvre le lang-sheet */
+    .lang-pill-btn { display: flex; align-items: center; gap: 3px; padding: 5px 10px; background: #ede9fe; border: none; border-radius: 20px; font-size: 12px; font-weight: 600; color: #4f46e5; cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap; line-height: 1; }
     .lang-pill-btn:active { background: #ddd6fe; }
+    /* Burger — mobile uniquement (nav + compte, la pastille gère la langue) */
     .burger-btn { display: none; align-items: center; justify-content: center; background: none; border: none; cursor: pointer; font-size: 22px; color: #57534e; padding: 4px 6px; border-radius: 8px; line-height: 1; }
     .burger-btn:active { background: #f5f3ff; color: #6366f1; }
 
     .lang-sheet-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 200; }
     .lang-sheet-overlay.open { display: block; }
-    .lang-sheet { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 16px 16px 0 0; padding: 0 20px 36px; z-index: 201; box-shadow: 0 -4px 24px rgba(0,0,0,0.08); }
+    .lang-sheet { display: none; position: fixed; bottom: 0; left: 0; right: 0; max-width: 420px; margin: 0 auto; background: white; border-radius: 16px 16px 0 0; padding: 0 20px 36px; z-index: 201; box-shadow: 0 -4px 24px rgba(0,0,0,0.08); }
     .lang-sheet.open { display: block; }
     .lang-sheet-handle { width: 36px; height: 4px; background: #e4e2f0; border-radius: 2px; margin: 10px auto 20px; }
     .lang-sheet-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid #f0f0ee; }
@@ -435,9 +432,7 @@
 
     @media (max-width: 700px) {
       .nav-pills { display: none; }
-      .lang-selectors { display: none; }
       .auth-zone { display: none; }
-      .lang-pill-btn { display: flex; }
       .burger-btn { display: flex; }
     }
   </style>
@@ -461,36 +456,10 @@
     <button class="pill active">Lire</button>
     <button class="pill">Mes mots</button>
   </div>
-  <div class="lang-selectors">
-    <div class="lang-sel-group">
-      <span class="lang-sel-label">Je lis</span>
-      <select class="lang-sel" id="langApprise" onchange="onLangChange()">
-        <option value="he">Hébreu</option>
-        <option value="en">Anglais</option>
-        <option value="es">Espagnol</option>
-        <option value="de">Allemand</option>
-        <option value="it">Italien</option>
-        <option value="pt">Portugais</option>
-        <option value="ar">Arabe</option>
-        <option value="fa">Persan</option>
-        <option value="ru">Russe</option>
-        <option value="ja" disabled>Japonais</option>
-        <option value="zh" disabled>Chinois</option>
-      </select>
-    </div>
-    <span class="lang-sep">→</span>
-    <div class="lang-sel-group">
-      <span class="lang-sel-label">Je traduis en</span>
-      <select class="lang-sel" id="langNative" onchange="onLangChange()">
-        <option value="fr">Français</option>
-        <option value="en">Anglais</option>
-        <option value="es">Espagnol</option>
-        <option value="de">Allemand</option>
-        <option value="it">Italien</option>
-        <option value="pt">Portugais</option>
-      </select>
-    </div>
-  </div>
+  <button class="lang-pill-btn" id="langPillBtn" onclick="toggleLangSheet()">
+    <span id="langPillText">HE → FR</span>
+    <i class="ti ti-chevron-down" style="font-size:9px;margin-left:2px"></i>
+  </button>
   <div class="auth-zone" id="authZone">
     <button class="btn-auth" id="btnConnexion" onclick="ouvrirModalAuth()">Se connecter</button>
     <div class="user-chip" id="userChip" style="display:none">
@@ -499,10 +468,6 @@
     </div>
   </div>
   <!-- Mobile only -->
-  <button class="lang-pill-btn" id="langPillBtn" onclick="toggleLangSheet()">
-    <span id="langPillText">HE → FR</span>
-    <i class="ti ti-chevron-down" style="font-size:9px;margin-left:2px"></i>
-  </button>
   <button class="burger-btn" id="burgerBtn" onclick="toggleBurger(event)">
     <i class="ti ti-menu-2"></i>
   </button>
@@ -1636,11 +1601,19 @@ function fermerBanner() {
   if (b) b.classList.remove('visible');
 }
 
+const LANG_FLAGS = {
+  he: '🇮🇱', en: '🇺🇸', es: '🇪🇸', de: '🇩🇪', it: '🇮🇹',
+  pt: '🇧🇷', ar: '🇸🇦', fa: '🇮🇷', ru: '🇷🇺', fr: '🇫🇷'
+};
+
 function updateLangPill() {
   const pill = document.getElementById('langPillText');
   if (!pill) return;
   const { langueApprise, langueNative } = getLangues();
-  pill.textContent = langueApprise.toUpperCase() + ' → ' + langueNative.toUpperCase();
+  const drapeau = code => LANG_FLAGS[code] ? LANG_FLAGS[code] + ' ' : '';
+  // Le code langue reste toujours visible même si l'emoji drapeau ne s'affiche pas (Windows).
+  pill.textContent = drapeau(langueApprise) + langueApprise.toUpperCase()
+    + ' → ' + drapeau(langueNative) + langueNative.toUpperCase();
 }
 
 function toggleLangSheet() {
@@ -1649,11 +1622,6 @@ function toggleLangSheet() {
   if (sheet.classList.contains('open')) {
     closeLangSheet();
   } else {
-    // Sync mobile selects to current values before opening
-    const mA = document.getElementById('mLangApprise');
-    const mN = document.getElementById('mLangNative');
-    if (mA) mA.value = document.getElementById('langApprise').value;
-    if (mN) mN.value = document.getElementById('langNative').value;
     sheet.classList.add('open');
     overlay.classList.add('open');
   }
@@ -1669,14 +1637,6 @@ function toggleBurger(e) {
 }
 function closeBurger() {
   document.getElementById('burgerMenu').classList.remove('open');
-}
-
-function onMobileLangChange() {
-  // Mirror mobile selects → main selects, then run the usual change handler
-  document.getElementById('langApprise').value = document.getElementById('mLangApprise').value;
-  document.getElementById('langNative').value  = document.getElementById('mLangNative').value;
-  onLangChange();
-  closeLangSheet();
 }
 
 // Close burger on outside tap
@@ -1695,11 +1655,6 @@ function onLangChange() {
   const native  = document.getElementById('langNative').value;
   localStorage.setItem('lamed_lang_apprise', apprise);
   localStorage.setItem('lamed_lang_native', native);
-  // Keep mobile mirrors in sync when changed from desktop
-  const mA = document.getElementById('mLangApprise');
-  const mN = document.getElementById('mLangNative');
-  if (mA) mA.value = apprise;
-  if (mN) mN.value = native;
   applyLangSettings();
   updateLangPill();
 }
@@ -1711,10 +1666,6 @@ function onLangChange() {
   const selNative  = document.getElementById('langNative');
   if (selApprise) selApprise.value = savedApprise;
   if (selNative)  selNative.value  = savedNative;
-  const mA = document.getElementById('mLangApprise');
-  const mN = document.getElementById('mLangNative');
-  if (mA) mA.value = savedApprise;
-  if (mN) mN.value = savedNative;
   applyLangSettings();
   setupParallelSync();
   updateLangPill();
@@ -1726,35 +1677,35 @@ function onLangChange() {
 
 </script>
 
-<!-- Mobile lang sheet -->
+<!-- Lang sheet — sélecteur unique, ouvert depuis la pastille (desktop et mobile) -->
 <div class="lang-sheet-overlay" id="langSheetOverlay" onclick="closeLangSheet()"></div>
 <div class="lang-sheet" id="langSheet">
   <div class="lang-sheet-handle"></div>
   <div class="lang-sheet-row">
     <span class="lang-sheet-label">Je lis</span>
-    <select class="lang-sel" id="mLangApprise" onchange="onMobileLangChange()">
-      <option value="he">Hébreu</option>
-      <option value="en">Anglais</option>
-      <option value="es">Espagnol</option>
-      <option value="de">Allemand</option>
-      <option value="it">Italien</option>
-      <option value="pt">Portugais</option>
-      <option value="ar">Arabe</option>
-      <option value="fa">Persan</option>
-      <option value="ru">Russe</option>
-      <option value="ja" disabled>Japonais</option>
-      <option value="zh" disabled>Chinois</option>
+    <select class="lang-sel" id="langApprise" onchange="onLangChange(); closeLangSheet();">
+      <option value="he">🇮🇱 HE · Hébreu</option>
+      <option value="en">🇺🇸 EN · Anglais</option>
+      <option value="es">🇪🇸 ES · Espagnol</option>
+      <option value="de">🇩🇪 DE · Allemand</option>
+      <option value="it">🇮🇹 IT · Italien</option>
+      <option value="pt">🇧🇷 PT · Portugais</option>
+      <option value="ar">🇸🇦 AR · Arabe</option>
+      <option value="fa">🇮🇷 FA · Persan</option>
+      <option value="ru">🇷🇺 RU · Russe</option>
+      <option value="ja" disabled>🇯🇵 JA · Japonais</option>
+      <option value="zh" disabled>🇨🇳 ZH · Chinois</option>
     </select>
   </div>
   <div class="lang-sheet-row">
     <span class="lang-sheet-label">Je traduis en</span>
-    <select class="lang-sel" id="mLangNative" onchange="onMobileLangChange()">
-      <option value="fr">Français</option>
-      <option value="en">Anglais</option>
-      <option value="es">Espagnol</option>
-      <option value="de">Allemand</option>
-      <option value="it">Italien</option>
-      <option value="pt">Portugais</option>
+    <select class="lang-sel" id="langNative" onchange="onLangChange(); closeLangSheet();">
+      <option value="fr">🇫🇷 FR · Français</option>
+      <option value="en">🇺🇸 EN · Anglais</option>
+      <option value="es">🇪🇸 ES · Espagnol</option>
+      <option value="de">🇩🇪 DE · Allemand</option>
+      <option value="it">🇮🇹 IT · Italien</option>
+      <option value="pt">🇧🇷 PT · Portugais</option>
     </select>
   </div>
 </div>
