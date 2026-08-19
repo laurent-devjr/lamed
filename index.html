@@ -1155,7 +1155,7 @@ function fermerPopup() {
 // ── Prononciation ──────────────────────────────────────────────────────────
 
 const LANG_LOCALES = {
-  en: 'en-US', es: 'es-ES', pt: 'pt-BR', fr: 'fr-FR', de: 'de-DE',
+  en: 'en-GB', es: 'es-ES', pt: 'pt-PT', fr: 'fr-FR', de: 'de-DE',
   it: 'it-IT', ar: 'ar-SA', he: 'he-IL', ru: 'ru-RU', fa: 'fa-IR'
 };
 
@@ -1602,8 +1602,8 @@ function fermerBanner() {
 }
 
 const LANG_FLAGS = {
-  he: '🇮🇱', en: '🇺🇸', es: '🇪🇸', de: '🇩🇪', it: '🇮🇹',
-  pt: '🇧🇷', ar: '🇸🇦', fa: '🇮🇷', ru: '🇷🇺', fr: '🇫🇷'
+  he: '🇮🇱', en: '🇬🇧', es: '🇪🇸', de: '🇩🇪', it: '🇮🇹',
+  pt: '🇵🇹', ar: '🇸🇦', fa: '🇮🇷', ru: '🇷🇺', fr: '🇫🇷'
 };
 
 function updateLangPill() {
@@ -1685,11 +1685,11 @@ function onLangChange() {
     <span class="lang-sheet-label">Je lis</span>
     <select class="lang-sel" id="langApprise" onchange="onLangChange(); closeLangSheet();">
       <option value="he">🇮🇱 HE · Hébreu</option>
-      <option value="en">🇺🇸 EN · Anglais</option>
+      <option value="en">🇬🇧 EN · Anglais</option>
       <option value="es">🇪🇸 ES · Espagnol</option>
       <option value="de">🇩🇪 DE · Allemand</option>
       <option value="it">🇮🇹 IT · Italien</option>
-      <option value="pt">🇧🇷 PT · Portugais</option>
+      <option value="pt">🇵🇹 PT · Portugais</option>
       <option value="ar">🇸🇦 AR · Arabe</option>
       <option value="fa">🇮🇷 FA · Persan</option>
       <option value="ru">🇷🇺 RU · Russe</option>
@@ -1701,11 +1701,11 @@ function onLangChange() {
     <span class="lang-sheet-label">Je traduis en</span>
     <select class="lang-sel" id="langNative" onchange="onLangChange(); closeLangSheet();">
       <option value="fr">🇫🇷 FR · Français</option>
-      <option value="en">🇺🇸 EN · Anglais</option>
+      <option value="en">🇬🇧 EN · Anglais</option>
       <option value="es">🇪🇸 ES · Espagnol</option>
       <option value="de">🇩🇪 DE · Allemand</option>
       <option value="it">🇮🇹 IT · Italien</option>
-      <option value="pt">🇧🇷 PT · Portugais</option>
+      <option value="pt">🇵🇹 PT · Portugais</option>
     </select>
   </div>
 </div>
