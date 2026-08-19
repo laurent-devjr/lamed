@@ -14,10 +14,16 @@
     html.mode-parallele,
     body.mode-parallele {
       overflow: hidden;
+      height: 100vh;
+      height: 100dvh;
+    }
+    body.mode-parallele {
+      display: flex;
+      flex-direction: column;
     }
 
     /* TOPBAR */
-    .topbar { background: #fafaf9; border-bottom: 0.5px solid #e4e2f0; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .topbar { background: #fafaf9; border-bottom: 0.5px solid #e4e2f0; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; flex-shrink: 0; }
     .logo { font-size: 15px; font-weight: 500; color: #1c1917; display: flex; align-items: center; gap: 8px; cursor: pointer; }
     .logo-badge { width: 28px; height: 28px; background: #6366f1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: white; font-weight: 700; flex-shrink: 0; }
     .nav-pills { display: flex; gap: 2px; }
@@ -26,12 +32,18 @@
 
     /* LAYOUT PRINCIPAL */
     .layout { display: flex; max-width: 1100px; margin: 0 auto; padding: 20px 16px; gap: 16px; }
+    body.mode-parallele .layout { flex: 1; min-height: 0; }
 
     /* ZONE PRINCIPALE */
     .main {
       flex: 1;
       min-width: 0;
       transition: all 0.3s ease;
+    }
+    body.mode-parallele .main {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
     }
 
     /* CARTE SAISIE */
@@ -48,11 +60,18 @@
     /* TEXTE CLIQUABLE */
     .text-card { background: white; border: 0.5px solid #e4e2f0; border-radius: 14px; padding: 20px; display: none; }
     .text-card.visible { display: block; }
+    body.mode-parallele .text-card.visible {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
     .text-toolbar {
   display: flex;
   gap: 8px;
   margin-bottom: 16px;
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 .btn-secondary { font-size: 12px; padding: 6px 12px; background: white; color: #78716c; border: 0.5px solid #e4e2f0; border-radius: 7px; cursor: pointer; font-weight: 500; font-family: 'Inter', sans-serif; }
 .btn-secondary:hover { background: #fafaf9; }
@@ -308,13 +327,13 @@
   }
 }
     .parallel-view { display: none; }
-    .parallel-view.visible { display: flex; flex-direction: row; position: fixed; top: 57px; left: 0; right: 0; bottom: 0; z-index: 5; background: white; }
+    .parallel-view.visible { display: flex; flex-direction: row; flex: 1; min-height: 0; background: white; }
     .parallel-separator { display: flex; align-items: center; justify-content: center; position: relative; flex-shrink: 0; height: 28px; }
     .parallel-separator::before { content: ''; position: absolute; left: 20px; right: 20px; height: 1px; background: linear-gradient(to right, transparent, #c4b5fd 30%, #c4b5fd 70%, transparent); }
     .parallel-separator-badge { background: white; border: 1px solid #c4b5fd; border-radius: 20px; padding: 3px 10px; font-size: 9px; color: #7c3aed; font-weight: 600; z-index: 1; position: relative; cursor: pointer; display: flex; align-items: center; gap: 4px; user-select: none; transition: background 0.15s; }
     .parallel-separator-badge:hover { background: #f5f3ff; }
-    .parallel-col.col-he { flex: 1; padding: 12px 16px; min-width: 0; font-size: 18px; line-height: 1.9; overflow-y: auto; background: white; }
-    .parallel-col.col-fr { flex: 1; padding: 12px 16px; min-width: 0; font-size: 18px; line-height: 1.9; overflow-y: auto; direction: ltr; color: #44403c; background: #faf9ff; }
+    .parallel-col.col-he { flex: 1; padding: 12px 16px; min-width: 0; min-height: 0; font-size: 18px; line-height: 1.9; overflow-y: auto; background: white; }
+    .parallel-col.col-fr { flex: 1; padding: 12px 16px; min-width: 0; min-height: 0; font-size: 18px; line-height: 1.9; overflow-y: auto; direction: ltr; color: #44403c; background: #faf9ff; }
     .seg { cursor: pointer; border-radius: 3px; padding: 1px 3px; transition: background 0.15s; display: inline; }
     .seg:hover { background: #f0f0ee; }
     .seg.hl-primary { background: #faeeda; outline: 1px solid #ba7517; }
@@ -752,31 +771,9 @@ async function chargerPortion(idx) {
   await lancerTraduction(portions[idx]);
 }
 
-function positionParallelView() {
-  const parallelView = document.getElementById('parallelView');
-  if (!parallelView.classList.contains('visible')) return;
-  const toolbarRect = document.querySelector('.text-toolbar').getBoundingClientRect();
-  parallelView.style.top = toolbarRect.bottom + 8 + 'px';
-  const cardRect = document.getElementById('textCard').getBoundingClientRect();
-  parallelView.style.left = cardRect.left + 'px';
-  parallelView.style.right = (window.innerWidth - cardRect.right) + 'px';
-  parallelView.style.borderRadius = '0 0 12px 12px';
-}
-
-// Repositionne .parallel-view dès que la hauteur/largeur réelle de la toolbar change
-// (bouton détail, nombre de parties, longueur des libellés de langue...) — se déclenche
-// après que le layout a effectivement changé, contrairement à un appel juste après un
-// classList.add qui peut mesurer une valeur pas encore à jour.
-const parallelToolbarObserver = new ResizeObserver(() => positionParallelView());
-parallelToolbarObserver.observe(document.querySelector('.text-toolbar'));
-
-window.addEventListener('resize', positionParallelView);
-window.addEventListener('orientationchange', () => requestAnimationFrame(positionParallelView));
-
 async function lancerTraduction(texte) {
   const parallelView = document.getElementById('parallelView');
   parallelView.classList.add('visible');
-  positionParallelView();
   document.getElementById('parallelFr').innerHTML = '<em style="color:#aaa">Traduction en cours...</em>';
   document.getElementById('parallelHe').innerHTML = '';
   try {
@@ -851,10 +848,6 @@ async function basculerTraduction() {
     btn.textContent = 'Traduction';
     output.style.display = '';
     parallelView.classList.remove('visible');
-    parallelView.style.top = '';
-    parallelView.style.left = '';
-    parallelView.style.right = '';
-    parallelView.style.borderRadius = '';
     document.body.classList.remove('mode-parallele');
     document.documentElement.classList.remove('mode-parallele');
     detailBar.classList.remove('visible');
