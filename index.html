@@ -401,6 +401,10 @@
     .lang-banner-text { flex: 1; min-width: 0; }
     .lang-banner-btn { background: #6366f1; color: white; border: none; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap; flex-shrink: 0; line-height: 1.4; }
     .lang-banner-btn:hover { background: #4f46e5; }
+    /* TOAST DISCRET */
+    .simple-toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1c1917; color: white; padding: 10px 16px; border-radius: 12px; font-size: 13px; z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.35s; max-width: calc(100vw - 32px); text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.25); }
+    .simple-toast.visible { opacity: 1; }
+
     @media (max-width: 700px) {
       .lang-banner { flex-direction: column; align-items: stretch; bottom: 72px; gap: 8px; }
       .lang-banner-btn { text-align: center; padding: 8px 12px; }
@@ -1182,13 +1186,78 @@ function fermerPopup() {
   document.getElementById('popupOverlay').classList.remove('visible');
 }
 
-function prononcerMot() {
-  const mot = document.getElementById('panel-mot').textContent.trim();
-  if (!mot || !window.speechSynthesis) return;
-  const utt = new SpeechSynthesisUtterance(mot);
-  utt.lang = 'he-IL';
+// ── Prononciation ──────────────────────────────────────────────────────────
+
+const LANG_LOCALES = {
+  en: 'en-US', es: 'es-ES', pt: 'pt-BR', fr: 'fr-FR', de: 'de-DE',
+  it: 'it-IT', ar: 'ar-SA', he: 'he-IL', ru: 'ru-RU', fa: 'fa-IR'
+};
+
+// getVoices() renvoie souvent [] au premier appel (chargement asynchrone des voix) :
+// on attend l'évènement voiceschanged, avec un filet de sécurité en cas de non-déclenchement.
+function getVoicesAsync() {
+  return new Promise(resolve => {
+    if (!window.speechSynthesis) return resolve([]);
+    const dejaLa = window.speechSynthesis.getVoices();
+    if (dejaLa.length) return resolve(dejaLa);
+    let resolu = false;
+    const surChangement = () => {
+      if (resolu) return;
+      resolu = true;
+      window.speechSynthesis.removeEventListener('voiceschanged', surChangement);
+      resolve(window.speechSynthesis.getVoices());
+    };
+    window.speechSynthesis.addEventListener('voiceschanged', surChangement);
+    setTimeout(() => {
+      if (resolu) return;
+      resolu = true;
+      window.speechSynthesis.removeEventListener('voiceschanged', surChangement);
+      resolve(window.speechSynthesis.getVoices());
+    }, 1000);
+  });
+}
+
+function trouverVoixPour(langCode, voix) {
+  const locale = LANG_LOCALES[langCode];
+  if (!locale) return null;
+  const norm = s => (s || '').toLowerCase().replace('_', '-');
+  const exacte = voix.find(v => norm(v.lang) === norm(locale));
+  if (exacte) return exacte;
+  return voix.find(v => norm(v.lang).split('-')[0] === langCode.toLowerCase()) || null;
+}
+
+async function prononcerTexte(texte, langCode) {
+  if (!texte || !window.speechSynthesis) return;
+  const disponibles = await getVoicesAsync();
+  const voixChoisie = trouverVoixPour(langCode, disponibles);
+  if (!voixChoisie) {
+    afficherToast('Prononciation non disponible pour cette langue sur cet appareil.');
+    return;
+  }
+  const utt = new SpeechSynthesisUtterance(texte);
+  utt.voice = voixChoisie;
+  utt.lang = voixChoisie.lang;
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(utt);
+}
+
+function afficherToast(msg) {
+  let toast = document.getElementById('simpleToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'simpleToast';
+    toast.className = 'simple-toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.classList.add('visible');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => toast.classList.remove('visible'), 2500);
+}
+
+function prononcerMot() {
+  const mot = document.getElementById('panel-mot').textContent.trim();
+  prononcerTexte(mot, getLangues().langueApprise);
 }
 
 // ── FAVORIS & HISTORIQUE ──────────────────────────────────────────────────────
